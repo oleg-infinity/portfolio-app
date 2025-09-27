@@ -1,0 +1,199 @@
+/* Portfolio Window Styles */
+.portfolio-window {
+    background-color: rgba(22, 22, 22, 0.98);
+    border: 2px solid #525252;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    padding: 15px;
+}
+
+.portfolio-container {
+    spacing: 12px;
+    min-width: 350px;
+}
+
+.portfolio-header {
+    width: max-content;
+    spacing: 10px;
+    border-bottom: 1px solid #44475a;
+    justify-content: space-between;
+}
+
+.portfolio-title {
+    padding: 20px;
+    font-size: 22px;
+    font-weight: bold;
+    color: #f8f8f2;
+}
+
+.search-button {
+    background-color: #50fa7b;
+    color: #282a36;
+    border: none;
+    border-radius: 5px;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.search-button:hover {
+    background-color: #45e069;
+}
+
+.portfolio-content {
+    spacing: 15px;
+    min-height: 200px;
+}
+
+/* Assets Column */
+.assets-column {
+    spacing: 8px;
+    min-width: 200px;
+}
+
+.assets-header {
+    spacing: 12px;
+    padding: 6px 8px;
+    border-bottom: 1px solid #44475a;
+    background-color: rgba(68, 71, 90, 0.3);
+    border-radius: 5px;
+}
+
+.assets-header-label {
+    font-size: 11px;
+    font-weight: bold;
+    color: #6272a4;
+    min-width: 60px;
+}
+
+.asset-name {
+    min-width: 70px;
+}
+
+.asset-price {
+    min-width: 60px;
+}
+
+.asset-quantity {
+    min-width: 50px;
+}
+
+.assets-container {
+    spacing: 4px;
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.asset-row {
+    spacing: 12px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.3);
+    margin: 1px 0;
+}
+
+.asset-row:hover {
+    background-color: rgba(68, 71, 90, 0.6);
+}
+
+.asset-symbol {
+    font-size: 12px;
+    font-weight: bold;
+    color: #f8f8f2;
+}
+
+.asset-price {
+    font-size: 11px;
+    color: #50fa7b;
+}
+
+.asset-quantity {
+    font-size: 11px;
+    color: #f8f8f2;
+}
+
+.asset-percentage {
+    font-size: 10px;
+    color: #ffb86c;
+}
+
+.quantity-info {
+    spacing: 2px;
+}
+
+/* Chart Column */
+.chart-column {
+    spacing: 10px;
+    min-width: 120px;
+    align-items: center;
+}
+
+.chart-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #f8f8f2;
+}
+
+.chart-area {
+    background-color: rgba(68, 71, 90, 0.3);
+    border-radius: 50%;
+    border: 1px solid #44475a;
+}
+
+.chart-legend {
+    spacing: 4px;
+    margin-top: 8px;
+}
+
+.legend-item {
+    spacing: 6px;
+    padding: 2px 0;
+}
+
+.legend-color {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.legend-label {
+    font-size: 9px;
+    color: #f8f8f2;
+}
+
+/* Footer */
+.portfolio-footer {
+    padding-top: 10px;
+    border-top: 1px solid #44475a;
+    margin-top: 5px;
+}
+
+.total-value {
+    font-size: 14px;
+    font-weight: bold;
+    color: #ff79c6;
+}
+
+/* Scrollbar */
+.assets-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+.assets-container::-webkit-scrollbar-track {
+    background: rgba(68, 71, 90, 0.3);
+    border-radius: 2px;
+}
+
+.assets-container::-webkit-scrollbar-thumb {
+    background: #6272a4;
+    border-radius: 2px;
+}
+
+/* Panel Button */
+.portfolio-icon {
+    color: #f8f8f2;
+}
+
+.myextension-button:hover .portfolio-icon {
+    color: #ff79c6;
+}

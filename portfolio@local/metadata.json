@@ -1,0 +1,8 @@
+{
+    "name": "Portfolio",
+    "description": "Simple test extension", 
+    "uuid": "portfolio@local",
+    "shell-version": ["3.36", "3.38", "40", "41", "42", "43", "44", "45", "46", "47", "48", "48.1"],
+    "url": "",
+    "version": 1
+}

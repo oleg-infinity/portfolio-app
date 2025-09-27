@@ -1,0 +1,9 @@
+{
+  "uuid": "myextension@local",
+  "name": "My Extension",
+  "description": "Кнопка у верхній панелі з маленьким вікном",
+  "shell-version": ["48.1", "47", "46", "45"],
+  "version": 1,
+  "url": "",
+  "use-es-modules": true
+}

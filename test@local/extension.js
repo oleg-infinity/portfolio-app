@@ -33,40 +33,44 @@ export default class MyExtension {
         Main.panel.addToStatusArea('MyExtension', this._button, 30, 'left');
     }
 
-
     _searchAsset(symbol) {
         return new Promise((resolve, reject) => {
             if (!symbol) return resolve(null);
 
-            const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbol)}`;
-            
+            // Використовуємо простий підхід з Gio без Soup
+            const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d`;
+        
             try {
-                const Soup = imports.gi.Soup;
-                const session = new Soup.Session();
-                const message = Soup.Message.new('GET', url);
-                
-                if (!message) {
-                    reject(new Error('Не вдалося створити запит'));
-                    return;
-                }
-
-                message.connect('finished', (msg) => {
+                const file = Gio.File.new_for_uri(url);
+                const cancellable = new Gio.Cancellable();
+            
+                file.load_contents_async(cancellable, (file, result) => {
                     try {
-                        if (msg.response_body && msg.response_body.data) {
-                            const responseText = msg.response_body.data;
-                            const json = JSON.parse(responseText);
-                            const quote = json.quoteResponse.result[0];
-                            
-                            if (!quote) {
+                        const [success, contents] = file.load_contents_finish(result);
+                    
+                        if (!success) {
+                            resolve(null);
+                            return;
+                        }
+                    
+                        const decoder = new TextDecoder('utf-8');
+                        const responseText = decoder.decode(contents);
+                        const json = JSON.parse(responseText);
+                    
+                        if (json.chart && json.chart.result && json.chart.result[0]) {
+                            const result = json.chart.result[0];
+                            const meta = result.meta;
+                            const price = meta.regularMarketPrice;
+                        
+                            if (price) {
+                                resolve({
+                                    symbol: meta.symbol,
+                                    price: price,
+                                    name: meta.shortName || meta.symbol
+                                    });
+                            } else {
                                 resolve(null);
-                                return;
                             }
-
-                            resolve({
-                                symbol: quote.symbol,
-                                price: quote.regularMarketPrice || 0,
-                                name: quote.shortName || quote.symbol
-                            });
                         } else {
                             resolve(null);
                         }
@@ -75,16 +79,13 @@ export default class MyExtension {
                         resolve(null);
                     }
                 });
-
-                session.queue_message(message, () => {
-                    // Callback для завершення запиту
-                });
             } catch (e) {
                 reject(e);
             }
         });
     }
-
+   
+    // Решта коду залишається без змін...
     _toggleSearchWindow() {
         if (this._isSearchVisible) {
             this._hideSearchWindow();

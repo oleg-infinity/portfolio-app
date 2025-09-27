@@ -10,8 +10,11 @@ export default class MyExtension {
     constructor() {
         this._button = null;
         this._window = null;
+        this._searchWindow = null;
         this._isWindowVisible = false;
+        this._isSearchVisible = false;
         this._assetsData = [];
+        this._searchField = null;
     }
 
 
@@ -28,32 +31,65 @@ export default class MyExtension {
             return Clutter.EVENT_STOP;
         });
         Main.panel.addToStatusArea('MyExtension', this._button, 30, 'left');
-        }
+    }
 
 
-    async _searchAsset(symbol) {
-        try {
-            const socketAddress = new Gio.UnixSocketAddress({
-                path: '/tmp/gnome-portfolio.sock'
-            });
-            const socketClient = new Gio.SocketClient();
-            const connection = await socketClient.connect_async(socketAddress, null);
-            const outputStream = connection.get_output_stream();
-            const dataOutputStream = new Gio.DataOutputStream({
-                base_stream: outputStream
-            });
-            await dataOutputStream.write_string_async(`SEARCH:${symbol}\n`, null);
-            const inputStream = connection.get_input_stream();
-            const dataInputStream = new Gio.DataInputStream({
-                base_stream: inputStream
-            });
-            const [bytes] = await dataInputStream.read_bytes_async(4096, null);
-            const jsonStr = new TextDecoder().decode(bytes.get_data());
-            const assetData = JSON.parse(jsonStr);
-            return assetData;
-        } catch (error) {
-            console.error('Помилка пошуку активу:', error);
-            return {status: 'error', message: 'Connection failed'};
+    _searchAsset(symbol) {
+        return new Promise((resolve, reject) => {
+            if (!symbol) return resolve(null);
+
+            const url = `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${encodeURIComponent(symbol)}`;
+            
+            try {
+                const Soup = imports.gi.Soup;
+                const session = new Soup.Session();
+                const message = Soup.Message.new('GET', url);
+                
+                if (!message) {
+                    reject(new Error('Не вдалося створити запит'));
+                    return;
+                }
+
+                message.connect('finished', (msg) => {
+                    try {
+                        if (msg.response_body && msg.response_body.data) {
+                            const responseText = msg.response_body.data;
+                            const json = JSON.parse(responseText);
+                            const quote = json.quoteResponse.result[0];
+                            
+                            if (!quote) {
+                                resolve(null);
+                                return;
+                            }
+
+                            resolve({
+                                symbol: quote.symbol,
+                                price: quote.regularMarketPrice || 0,
+                                name: quote.shortName || quote.symbol
+                            });
+                        } else {
+                            resolve(null);
+                        }
+                    } catch (e) {
+                        log(`Помилка при парсингу: ${e}`);
+                        resolve(null);
+                    }
+                });
+
+                session.queue_message(message, () => {
+                    // Callback для завершення запиту
+                });
+            } catch (e) {
+                reject(e);
+            }
+        });
+    }
+
+    _toggleSearchWindow() {
+        if (this._isSearchVisible) {
+            this._hideSearchWindow();
+        } else {
+            this._showSearchWindow();
         }
     }
 
@@ -76,7 +112,7 @@ export default class MyExtension {
         this._portfolioIcon.icon_name = 'folder-open-symbolic';
         this._updatePortfolioData();
         this._window.show();
-        this._window.raise_top(); // Піднімаємо вікно на передній план
+        this._window.raise_top();
     }
 
 
@@ -91,18 +127,15 @@ export default class MyExtension {
 
 
     _createPortfolioWindow() {
-        // Створюємо вікно з правильними параметрами
         this._window = new St.Widget({
             style_class: 'portfolio-window',
             reactive: true,
             can_focus: true,
             track_hover: true,
-            width: 500,  // Зменшимо ширину
-            height: 750  // Зменшимо висоту
+            width: 500,
+            height: 750
         });
 
-
-        // Головний контейнер
         const mainContainer = new St.BoxLayout({
             vertical: true,
             style_class: 'portfolio-container',
@@ -110,8 +143,6 @@ export default class MyExtension {
             y_expand: true
         });
 
-
-        // Header - з кнопкою закриття
         const header = new St.BoxLayout({
             style_class: 'portfolio-header'
         });
@@ -122,26 +153,22 @@ export default class MyExtension {
         });
         header.add_child(title);
 
-
         // Кнопка пошуку
-        this._searchButton = new St.Button({
-            style_class: 'search-button',
-            label: 'Пошук',
-            x_align: Clutter.ActorAlign.START
+        const searchButton = new St.Button({
+            child: new St.Icon({ icon_name: 'edit-find-symbolic' }),
+            style_class: 'search-button'
         });
-        
-        this._searchButton.connect('clicked', () => {
-            this._showSearchDialog();
+        searchButton.connect('clicked', () => {
+            this._showSearchWindow();
         });
+        header.add_child(searchButton);
 
-        // Контентна область
         const contentArea = new St.BoxLayout({
             style_class: 'portfolio-content',
             x_expand: true,
             y_expand: true
         });
 
-        // Ліва колонка - активи
         const assetsColumn = new St.BoxLayout({
             vertical: true,
             style_class: 'assets-column',
@@ -150,7 +177,6 @@ export default class MyExtension {
             height: 450
         });
 
-        // Заголовок таблиці активів
         const assetsHeader = new St.BoxLayout({
             style_class: 'assets-header',
             width: 100
@@ -176,7 +202,6 @@ export default class MyExtension {
 
         assetsColumn.add_child(assetsHeader);
 
-        // Контейнер для активів
         this._assetsContainer = new St.BoxLayout({
             vertical: true,
             style_class: 'assets-container',
@@ -188,17 +213,10 @@ export default class MyExtension {
         
         assetsColumn.add_child(this._assetsContainer);
 
-        // Права колонка - діаграма
         const chartColumn = new St.BoxLayout({
             vertical: true,
             style_class: 'chart-column'
         });
-
-        //const chartTitle = new St.Label({
-            //text: 'Розподіл',
-            //style_class: 'chart-title'
-        //});
-        //chartColumn.add_child(chartTitle);
 
         this._chartArea = new St.DrawingArea({
             style_class: 'chart-area',
@@ -212,18 +230,15 @@ export default class MyExtension {
 
         chartColumn.add_child(this._chartArea);
 
-        // Легенда діаграми
         this._chartLegend = new St.BoxLayout({
             vertical: true,
             style_class: 'chart-legend'
         });
         chartColumn.add_child(this._chartLegend);
 
-        // Додаємо колонки до контентної області
         contentArea.add_child(assetsColumn);
         contentArea.add_child(chartColumn);
 
-        // Footer - загальна вартість
         const footer = new St.BoxLayout({
             style_class: 'portfolio-footer'
         });
@@ -234,13 +249,12 @@ export default class MyExtension {
         });
         footer.add_child(this._totalValueLabel);
 
-        // Збираємо всі компоненти
         mainContainer.add_child(header);
-        mainContainer.add_child(this._searchButton);
         mainContainer.add_child(contentArea);
         mainContainer.add_child(footer);
         this._window.add_child(mainContainer);
         this._repositionWindow();
+        
         this._window.connect('button-press-event', (actor, event) => {
             return Clutter.EVENT_STOP;
         });
@@ -262,7 +276,7 @@ export default class MyExtension {
             const [buttonX, buttonY] = this._button.get_transformed_position();
             const panelHeight = Main.panel.height;
             const monitor = Main.layoutManager.primaryMonitor;
-            const x = Math.min(buttonX, monitor.width - 450); // Щоб не виходило за екран
+            const x = Math.min(buttonX, monitor.width - 450);
             const y = buttonY + panelHeight + 10;
             this._window.set_position(x, y);
         } catch (error) {
@@ -271,93 +285,270 @@ export default class MyExtension {
         }
     }
 
+    _showSearchWindow() {
+        if (this._searchWindow) {
+            this._hideSearchWindow();
+            return;
+        }
 
-    async _showSearchDialog() {
-        // Простий пошук через консоль для початку
-        console.log('Функція пошуку активована');
-        this._assetsData = [
-            { symbol: 'AAAA', price: 175.30, quantity: 5, color: '#FF6B6B' },
-            { symbol: 'TSLA', price: 210.75, quantity: 3, color: '#4ECDC4' }
-        ];
+        this._searchWindow = new St.Widget({
+            style_class: 'search-window',
+            reactive: true,
+            can_focus: true,
+            track_hover: true,
+            width: 350,
+            height: 200
+        });
+
+        const searchContainer = new St.BoxLayout({
+            vertical: true,
+            style_class: 'search-container'
+        });
+
+        const header = new St.BoxLayout({
+            style_class: 'search-header'
+        });
         
-        this._refreshUI();
+        const title = new St.Label({
+            text: 'Пошук активу',
+            style_class: 'search-title'
+        });
+        header.add_child(title);
+
+        const closeButton = new St.Button({
+            child: new St.Icon({ icon_name: 'window-close-symbolic' }),
+            style_class: 'close-button'
+        });
+        closeButton.connect('clicked', () => {
+            this._hideSearchWindow();
+        });
+        header.add_child(closeButton);
+
+        const content = new St.BoxLayout({
+            vertical: true,
+            style_class: 'search-content'
+        });
+
+        const entryContainer = new St.BoxLayout({
+            style_class: 'entry-container'
+        });
+        const entry = new St.Entry({
+            hint_text: 'Введіть символ (наприклад: AAPL)',
+            x_expand: true,
+            style_class: 'search-entry'
+        });
+        entryContainer.add_child(entry);
+
+        const buttonContainer = new St.BoxLayout({
+            style_class: 'button-container'
+        });
+        const searchBtn = new St.Button({
+            label: 'Знайти та додати',
+            style_class: 'search-action-button'
+        });
+
+        searchBtn.connect('clicked', () => {
+            this._performSearch(entry, searchBtn);
+        });
+
+        buttonContainer.add_child(searchBtn);
+
+        // Обробка Enter в полі вводу
+        entry.connect('key-press-event', (actor, event) => {
+            const key = event.get_key_symbol();
+            if (key === Clutter.KEY_Return || key === Clutter.KEY_KP_Enter) {
+                this._performSearch(entry, searchBtn);
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
+        });
+
+        content.add_child(entryContainer);
+        content.add_child(buttonContainer);
+
+        searchContainer.add_child(header);
+        searchContainer.add_child(content);
+        this._searchWindow.add_child(searchContainer);
+
+        // Позиціонуємо вікно пошуку збоку від основного вікна
+        this._repositionSearchWindow();
+        
+        Main.layoutManager.addChrome(this._searchWindow);
+        this._searchWindow.show();
+        this._isSearchVisible = true;
+        
+        // Фокусуємо поле вводу
+        entry.grab_key_focus();
     }
 
+    async _performSearch(entry, searchBtn) {
+        const symbol = entry.text.trim().toUpperCase();
+        if (!symbol) {
+            Main.notify('Будь ласка, введіть символ активу');
+            return;
+        }
+
+        searchBtn.label = 'Пошук...';
+        searchBtn.set_reactive(false);
+
+        try {
+            const asset = await this._searchAsset(symbol);
+            
+            if (asset) {
+                asset.quantity = 1;
+                asset.color = this._getRandomColor();
+                
+                // Перевіряємо, чи актив вже є в портфелі
+                const existingIndex = this._assetsData.findIndex(a => a.symbol === asset.symbol);
+                if (existingIndex >= 0) {
+                    this._assetsData[existingIndex].quantity += 1;
+                } else {
+                    this._assetsData.push(asset);
+                }
+                
+                this._updatePortfolioData();
+                this._hideSearchWindow();
+                Main.notify(`Актив "${symbol}" додано до портфелю`);
+            } else {
+                Main.notify(`Актив "${symbol}" не знайдено`);
+            }
+        } catch (error) {
+            log(`Помилка пошуку: ${error}`);
+            Main.notify('Помилка пошуку. Перевірте підключення до інтернету');
+        } finally {
+            searchBtn.label = 'Знайти та додати';
+            searchBtn.set_reactive(true);
+        }
+    }
+
+    _repositionSearchWindow() {
+        if (!this._searchWindow || !this._window) return;
+        
+        try {
+            const [windowX, windowY] = this._window.get_position();
+            const windowWidth = this._window.width;
+            const monitor = Main.layoutManager.primaryMonitor;
+            
+            // Ставимо вікно пошуку праворуч від основного вікна
+            const x = Math.min(windowX + windowWidth + 10, monitor.width - 350);
+            const y = windowY;
+            
+            this._searchWindow.set_position(x, y);
+        } catch (error) {
+            console.error('Помилка позиціонування вікна пошуку:', error);
+            // Якщо не вийшло, ставимо поруч з кнопкою
+            const [buttonX, buttonY] = this._button.get_transformed_position();
+            const panelHeight = Main.panel.height;
+            this._searchWindow.set_position(buttonX, buttonY + panelHeight + 10);
+        }
+    }
+
+    _hideSearchWindow() {
+        if (this._searchWindow && this._isSearchVisible) {
+            this._searchWindow.destroy();
+            this._searchWindow = null;
+            this._isSearchVisible = false;
+        }
+    }
+
+    _getRandomColor() {
+        const colors = ['#73fc03ff', '#4ECDC4', '#1b6808ff', '#96CEB4', '#FFE66D', '#FFA07A', '#98D8C8', '#F7DC6F'];
+        return colors[Math.floor(Math.random() * colors.length)];
+    }
 
     _updatePortfolioData() {
         this._assetsContainer.destroy_all_children();
         this._chartLegend.destroy_all_children();
-        this._assetsData = [
-            { symbol: 'QWER.US', price: 150.25, quantity: 10, color: '#FF6B6B' },
-            { symbol: 'EEEE.EU', price: 45.80, quantity: 25, color: '#4ECDC4' },
-        ];
+        
+        if (this._assetsData.length === 0) {
+            this._assetsData = [
+                { symbol: 'QWER.US', price: 150.25, quantity: 10, color: '#70ff4cff' },
+                { symbol: 'EEEE.EU', price: 45.80, quantity: 25, color: '#33ff00ff' },
+            ];
+        }
+        
         let totalValue = 0;
         this._assetsData.forEach(asset => {
             const assetValue = asset.price * asset.quantity;
             totalValue += assetValue;
         });
+        
         this._assetsData.forEach(asset => {
             const assetValue = asset.price * asset.quantity;
             const percentage = totalValue > 0 ? (assetValue / totalValue * 100) : 0;
+            
             const assetRow = new St.BoxLayout({
                 style_class: "asset-row"
             });
+            
             assetRow.add_child(new St.Label({
                 text: asset.symbol,
+                style_class: 'asset-symbol',
                 width: 100
             }));
+            
             assetRow.add_child(new St.Label({
                 text: `$${asset.price.toFixed(2)}`,
+                style_class: 'asset-price',
                 width: 100
             }));
-            const quantityInfo = new St.BoxLayout({
-                vertical: true
-            });
-            quantityInfo.add_child(new St.Label({
-                text: asset.quantity.toString()
+            
+            assetRow.add_child(new St.Label({
+                text: asset.quantity.toString(),
+                style_class: 'asset-quantity',
+                width: 100
             }));
-            //quantityInfo.add_child(new St.Label({
-                //text: `${percentage.toFixed(1)}%`,
-                //width: 100
-            //}));
-            assetRow.add_child(quantityInfo);
+            
             this._assetsContainer.add_child(assetRow);
-            const legendItem = new St.BoxLayout();
+            
+            const legendItem = new St.BoxLayout({
+                style_class: 'legend-item'
+            });
+            
             const colorBox = new St.Widget({
-                style: `background-color: ${asset.color}; width: 12px; height: 12px;`
+                style: `background-color: ${asset.color}; width: 12px; height: 12px; border-radius: 2px;`
             });
+            
             const legendLabel = new St.Label({
-                text: `${asset.symbol} (${percentage.toFixed(1)}%)`
+                text: `${asset.symbol} (${percentage.toFixed(1)}%)`,
+                style_class: 'legend-label'
             });
+            
             legendItem.add_child(colorBox);
             legendItem.add_child(legendLabel);
             this._chartLegend.add_child(legendItem);
         });
+        
         this._totalValueLabel.set_text(`Загальна вартість: $${totalValue.toFixed(2)}`);
         this._chartArea.queue_repaint();
     }
 
-
     _drawChart(area) {
         if (this._assetsData.length === 0) return;
+        
         const cr = area.get_context();
         const width = area.width;
         const height = area.height;
         const radius = Math.min(width, height) / 2 - 10;
         const centerX = width / 2;
         const centerY = height / 2;
+        
         let totalValue = 0;
         this._assetsData.forEach(asset => {
             totalValue += asset.price * asset.quantity;
         });
+        
         if (totalValue === 0) return;
+        
         let currentAngle = 0;
         this._assetsData.forEach(asset => {
             const assetValue = asset.price * asset.quantity;
             const angle = (assetValue / totalValue) * 2 * Math.PI;
+            
             cr.arc(centerX, centerY, radius, currentAngle, currentAngle + angle);
             cr.lineTo(centerX, centerY);
             cr.closePath();
+            
             const color = asset.color;
             cr.setSourceRGBA(
                 parseInt(color.substr(1, 2), 16) / 255,
@@ -366,25 +557,23 @@ export default class MyExtension {
                 0.9
             );
             cr.fill();
-            cr.arc(centerX, centerY, radius, currentAngle, currentAngle + angle);
-            cr.setSourceRGBA(1, 1, 1, 0.3);
-            cr.setLineWidth(1);
-            cr.stroke();
+            
             currentAngle += angle;
         });
-        cr.arc(centerX, centerY, radius * 0.4, 0, 2 * Math.PI);
-        cr.setSourceRGBA(0.2, 0.2, 0.2, 1);
-        cr.fill();
+        
         cr.$dispose();
     }
 
-
     disable() {
         this._hidePortfolioWindow();
+        this._hideSearchWindow();
+        
         if (this._button) {
             this._button.destroy();
             this._button = null;
         }
+        
         this._isWindowVisible = false;
+        this._isSearchVisible = false;
     }
 }

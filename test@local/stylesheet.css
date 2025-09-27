@@ -27,7 +27,7 @@
 }
 
 .search-button {
-    background-color: #50fa7b;
+    background-color: #6bff5d;
     color: #282a36;
     border: none;
     border-radius: 5px;
@@ -36,7 +36,7 @@
 }
 
 .search-button:hover {
-    background-color: #45e069;
+    background-color: #94ff7a;
 }
 
 .portfolio-content {
@@ -171,7 +171,7 @@
 .total-value {
     font-size: 14px;
     font-weight: bold;
-    color: #ff79c6;
+    color: #e44720;
 }
 
 /* Scrollbar */
@@ -195,5 +195,100 @@
 }
 
 .myextension-button:hover .portfolio-icon {
-    color: #ff79c6;
+    color: #e44720;
+}
+
+/* Вікно пошуку */
+.search-window {
+    background-color: rgba(40, 40, 40, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    padding: 0;
+}
+
+.search-container {
+    spacing: 0;
+    padding: 0;
+}
+
+/* Заголовок вікна пошуку */
+.search-header {
+    background-color: rgba(60, 60, 60, 0.8);
+    border-radius: 12px 12px 0 0;
+    padding: 12px 15px;
+    spacing: 10px;
+}
+
+.search-title {
+    font-weight: bold;
+    font-size: 14px;
+    color: #ffffff;
+}
+
+.close-button {
+    background-color: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 5px;
+}
+
+.close-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.close-button:active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Контент пошуку */
+.search-content {
+    padding: 20px 15px;
+    spacing: 15px;
+}
+
+.entry-container {
+    spacing: 10px;
+}
+
+.search-entry {
+    background-color: rgba(30, 30, 30, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #ffffff;
+    font-size: 13px;
+    selection-background-color: #4a90d9;
+}
+
+.search-entry:focus {
+    border-color: #4a90d9;
+    box-shadow: 0 0 0 1px #4a90d9;
+}
+
+.button-container {
+    spacing: 10px;
+}
+
+.search-action-button {
+    background-color: #4a90d9;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 13px;
+}
+
+.search-action-button:hover {
+    background-color: #5a9fe9;
+}
+
+.search-action-button:active {
+    background-color: #3a80c9;
+}
+
+.search-action-button:insensitive {
+    background-color: rgba(74, 144, 217, 0.5);
+    color: rgba(255, 255, 255, 0.5);
 }

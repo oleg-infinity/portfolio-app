@@ -5,7 +5,6 @@ import Clutter from 'gi://Clutter';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 import * as PanelMenu from 'resource:///org/gnome/shell/ui/panelMenu.js';
 
-
 export default class MyExtension {
     constructor() {
         this._button = null;
@@ -17,7 +16,6 @@ export default class MyExtension {
         this._searchField = null;
         this._dataFile = null;
     }
-
 
     enable() {
         this._initDataStorage();
@@ -38,25 +36,19 @@ export default class MyExtension {
 
     _initDataStorage() {
         try {
-            // Отримуємо стандартну директорію для даних користувача
-            const userDataDir = GLib.get_user_data_dir(); // Зазвичай ~/.local/share
+            const userDataDir = GLib.get_user_data_dir();
             const extensionDataDir = `${userDataDir}/gnome-shell/extensions/test@local`;
             
-            // Альтернативний варіант - використовуємо config директорію
-            const userConfigDir = GLib.get_user_config_dir(); // Зазвичай ~/.config
+            const userConfigDir = GLib.get_user_config_dir();
             const configDataDir = `${userConfigDir}/test-portfolio`;
             
-            // Вибираємо найкращий варіант
             let dataDir;
             if (GLib.file_test(extensionDataDir, GLib.FileTest.EXISTS)) {
-                // Якщо директорія extension існує (для встановлених extensions)
                 dataDir = extensionDataDir;
             } else {
-                // Інакше використовуємо config директорію
                 dataDir = configDataDir;
             }
             
-            // Створюємо директорію якщо не існує
             if (!GLib.file_test(dataDir, GLib.FileTest.EXISTS)) {
                 GLib.mkdir_with_parents(dataDir, 0o755);
                 log(`Створено директорію для даних: ${dataDir}`);
@@ -67,7 +59,6 @@ export default class MyExtension {
             
         } catch (e) {
             log(`Помилка ініціалізації сховища: ${e}`);
-            // Резервний варіант - домашня директорія
             const homeDir = GLib.get_home_dir();
             this._dataFile = `${homeDir}/.test-portfolio.json`;
         }
@@ -82,10 +73,18 @@ export default class MyExtension {
                     const jsonString = decoder.decode(contents);
                     const data = JSON.parse(jsonString);
                     this._assetsData = data.assets || [];
+                    
+                    // Виправляємо старі дані, якщо немає поля purchasePrice
+                    this._assetsData.forEach(asset => {
+                        if (asset.purchasePrice === undefined) {
+                            asset.purchasePrice = asset.price || 0;
+                            log(`Виправлено актив ${asset.symbol}: додано purchasePrice = ${asset.purchasePrice}`);
+                        }
+                    });
+                    
                     log(`Завантажено ${this._assetsData.length} активів`);
                 }
             } else {
-                // Файл не існує - створюємо порожній портфель
                 this._assetsData = [];
                 this._saveAssetsData();
                 log('Створено новий порожній портфель');
@@ -99,7 +98,7 @@ export default class MyExtension {
     _saveAssetsData() {
         try {
             const data = {
-                version: '1.0',
+                version: '1.1', // Оновлюємо версію
                 lastUpdate: new Date().toISOString(),
                 assets: this._assetsData
             };
@@ -119,7 +118,6 @@ export default class MyExtension {
         return new Promise((resolve, reject) => {
             if (!symbol) return resolve(null);
 
-            // Використовуємо простий підхід з Gio без Soup
             const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d`;
         
             try {
@@ -148,8 +146,10 @@ export default class MyExtension {
                                 resolve({
                                     symbol: meta.symbol,
                                     price: price,
-                                    name: meta.shortName || meta.symbol
-                                    });
+                                    currentPrice: price,
+                                    name: meta.shortName || meta.symbol,
+                                    purchasePrice: price // Додаємо початкове значення
+                                });
                             } else {
                                 resolve(null);
                             }
@@ -166,15 +166,6 @@ export default class MyExtension {
             }
         });
     }
-   
-    _toggleSearchWindow() {
-        if (this._isSearchVisible) {
-            this._hideSearchWindow();
-        } else {
-            this._showSearchWindow();
-        }
-    }
-
 
     _togglePortfolioWindow() {
         if (this._isWindowVisible) {
@@ -183,7 +174,6 @@ export default class MyExtension {
             this._showPortfolioWindow();
         }
     }
-
 
     _showPortfolioWindow() {
         if (!this._window) {
@@ -197,7 +187,6 @@ export default class MyExtension {
         this._window.raise_top();
     }
 
-
     _hidePortfolioWindow() {
         if (this._window && this._isWindowVisible) {
             this._window.hide();
@@ -207,14 +196,13 @@ export default class MyExtension {
         }
     }
 
-
     _createPortfolioWindow() {
         this._window = new St.Widget({
             style_class: 'portfolio-window',
             reactive: true,
             can_focus: true,
             track_hover: true,
-            width: 500,
+            width: 600,
             height: 750
         });
 
@@ -235,7 +223,6 @@ export default class MyExtension {
         });
         header.add_child(title);
 
-        // Кнопка пошуку
         const searchButton = new St.Button({
             child: new St.Icon({ icon_name: 'edit-find-symbolic' }),
             style_class: 'search-button'
@@ -255,31 +242,43 @@ export default class MyExtension {
             vertical: true,
             style_class: 'assets-column',
             x_expand: true,
-            width: 300,
+            width: 400,
             height: 450
         });
 
         const assetsHeader = new St.BoxLayout({
             style_class: 'assets-header',
-            width: 100
+            width: 400
         });
         
         assetsHeader.add_child(new St.Label({
             text: 'Актив',
             style_class: 'assets-header-label asset-name',
-            width: 100
+            width: 60
         }));
         
         assetsHeader.add_child(new St.Label({
-            text: 'Ціна',
+            text: 'Поточна',
             style_class: 'assets-header-label asset-price',
-            width: 100
+            width: 70
+        }));
+        
+        assetsHeader.add_child(new St.Label({
+            text: 'Придб.',
+            style_class: 'assets-header-label asset-purchase-price',
+            width: 70
         }));
         
         assetsHeader.add_child(new St.Label({
             text: 'Кількість',
             style_class: 'assets-header-label asset-quantity',
-            width: 100
+            width: 70
+        }));
+        
+        assetsHeader.add_child(new St.Label({
+            text: 'Дохідність',
+            style_class: 'assets-header-label asset-profitability',
+            width: 90
         }));
 
         assetsColumn.add_child(assetsHeader);
@@ -289,7 +288,7 @@ export default class MyExtension {
             style_class: 'assets-container',
             x_expand: true,
             y_expand: true,
-            width: 300,
+            width: 400,
             height: 500
         });
         
@@ -350,7 +349,6 @@ export default class MyExtension {
             return Clutter.EVENT_PROPAGATE;
         });
     }
-    
 
     _repositionWindow() {
         if (!this._window || !this._button) return;
@@ -358,7 +356,7 @@ export default class MyExtension {
             const [buttonX, buttonY] = this._button.get_transformed_position();
             const panelHeight = Main.panel.height;
             const monitor = Main.layoutManager.primaryMonitor;
-            const x = Math.min(buttonX, monitor.width - 450);
+            const x = Math.min(buttonX, monitor.width - 550);
             const y = buttonY + panelHeight + 10;
             this._window.set_position(x, y);
         } catch (error) {
@@ -425,7 +423,7 @@ export default class MyExtension {
             style_class: 'button-container'
         });
         const searchBtn = new St.Button({
-            label: 'Знайти та додати',
+            label: 'Знайти',
             style_class: 'search-action-button'
         });
 
@@ -435,7 +433,6 @@ export default class MyExtension {
 
         buttonContainer.add_child(searchBtn);
 
-        // Обробка Enter в полі вводу
         entry.connect('key-press-event', (actor, event) => {
             const key = event.get_key_symbol();
             if (key === Clutter.KEY_Return || key === Clutter.KEY_KP_Enter) {
@@ -452,14 +449,12 @@ export default class MyExtension {
         searchContainer.add_child(content);
         this._searchWindow.add_child(searchContainer);
 
-        // Позиціонуємо вікно пошуку збоку від основного вікна
         this._repositionSearchWindow();
         
         Main.layoutManager.addChrome(this._searchWindow);
         this._searchWindow.show();
         this._isSearchVisible = true;
         
-        // Фокусуємо поле вводу
         entry.grab_key_focus();
     }
 
@@ -477,8 +472,7 @@ export default class MyExtension {
             const asset = await this._searchAsset(symbol);
             
             if (asset) {
-                // Запитуємо кількість після успішного пошуку
-                this._askForQuantity(asset);
+                this._askForPurchaseDetails(asset);
                 this._hideSearchWindow();
             } else {
                 Main.notify(`Актив "${symbol}" не знайдено`);
@@ -487,68 +481,111 @@ export default class MyExtension {
             log(`Помилка пошуку: ${error}`);
             Main.notify('Помилка пошуку. Перевірте підключення до інтернету');
         } finally {
-            searchBtn.label = 'Знайти та додати';
+            searchBtn.label = 'Знайти';
             searchBtn.set_reactive(true);
         }
     }
 
-    _askForQuantity(asset) {
+    _askForPurchaseDetails(asset) {
         const dialog = new St.Widget({
-            style_class: 'quantity-dialog',
+            style_class: 'purchase-dialog',
             reactive: true,
             can_focus: true,
             width: 300,
-            height: 150
+            height: 200
         });
 
         const container = new St.BoxLayout({
             vertical: true,
-            style_class: 'quantity-container-dialog'
+            style_class: 'purchase-container'
         });
 
         const message = new St.Label({
-            text: `Введіть кількість для ${asset.symbol}:`,
-            style_class: 'quantity-message'
+            text: `Додавання ${asset.symbol}`,
+            style_class: 'purchase-message'
         });
 
-        const entryContainer = new St.BoxLayout();
+        // Поле для кількості
+        const quantityContainer = new St.BoxLayout({
+            style_class: 'purchase-field-container'
+        });
+        quantityContainer.add_child(new St.Label({
+            text: 'Кількість:',
+            style_class: 'purchase-label'
+        }));
         const quantityEntry = new St.Entry({
             text: '1',
-            style_class: 'quantity-entry'
+            style_class: 'purchase-entry'
         });
-        entryContainer.add_child(quantityEntry);
+        quantityContainer.add_child(quantityEntry);
+
+        // Поле для ціни придбання
+        const priceContainer = new St.BoxLayout({
+            style_class: 'purchase-field-container'
+        });
+        priceContainer.add_child(new St.Label({
+            text: 'Ціна придбання:',
+            style_class: 'purchase-label'
+        }));
+        const priceEntry = new St.Entry({
+            text: asset.price.toFixed(2),
+            style_class: 'purchase-entry'
+        });
+        priceContainer.add_child(priceEntry);
 
         const buttonContainer = new St.BoxLayout({
-            style_class: 'quantity-buttons'
+            style_class: 'purchase-buttons'
         });
 
         const addButton = new St.Button({
             label: 'Додати',
-            style_class: 'quantity-add-button'
+            style_class: 'purchase-add-button'
         });
 
         const cancelButton = new St.Button({
             label: 'Скасувати',
-            style_class: 'quantity-cancel-button'
+            style_class: 'purchase-cancel-button'
         });
 
         addButton.connect('clicked', () => {
             const quantity = parseInt(quantityEntry.text) || 1;
-            if (quantity > 0) {
-                asset.quantity = quantity;
-                asset.color = this._getRandomColor();
+            const purchasePrice = parseFloat(priceEntry.text) || asset.price;
+            
+            if (quantity > 0 && purchasePrice > 0) {
+                // Створюємо новий об'єкт активу з усіма необхідними полями
+                const newAsset = {
+                    symbol: asset.symbol,
+                    price: asset.price,
+                    currentPrice: asset.price,
+                    purchasePrice: purchasePrice,
+                    quantity: quantity,
+                    name: asset.name,
+                    color: this._getRandomColor()
+                };
                 
                 // Перевіряємо, чи актив вже є в портфелі
                 const existingIndex = this._assetsData.findIndex(a => a.symbol === asset.symbol);
                 if (existingIndex >= 0) {
-                    this._assetsData[existingIndex].quantity += quantity;
+                    // Якщо актив вже є, оновлюємо кількість та середню ціну придбання
+                    const existingAsset = this._assetsData[existingIndex];
+                    const totalQuantity = existingAsset.quantity + quantity;
+                    const averagePrice = ((existingAsset.purchasePrice * existingAsset.quantity) + 
+                                        (purchasePrice * quantity)) / totalQuantity;
+                    
+                    existingAsset.quantity = totalQuantity;
+                    existingAsset.purchasePrice = averagePrice;
+                    log(`Оновлено існуючий актив: ${asset.symbol}`);
                 } else {
-                    this._assetsData.push(asset);
+                    this._assetsData.push(newAsset);
+                    log(`Додано новий актив: ${asset.symbol}`);
                 }
                 
                 this._updatePortfolioData();
+                this._saveAssetsData();
                 Main.layoutManager.removeChrome(dialog);
                 Main.notify(`Додано ${quantity} ${asset.symbol}`);
+            } else {
+                Main.notify('Будь ласка, введіть коректні значення');
             }
         });
 
@@ -557,20 +594,24 @@ export default class MyExtension {
         });
 
         // Обробка Enter
-        quantityEntry.connect('key-press-event', (actor, event) => {
+        const handleEnter = (actor, event) => {
             const key = event.get_key_symbol();
             if (key === Clutter.KEY_Return || key === Clutter.KEY_KP_Enter) {
                 addButton.emit('clicked');
                 return Clutter.EVENT_STOP;
             }
             return Clutter.EVENT_PROPAGATE;
-        });
+        };
+
+        quantityEntry.connect('key-press-event', handleEnter);
+        priceEntry.connect('key-press-event', handleEnter);
 
         buttonContainer.add_child(addButton);
         buttonContainer.add_child(cancelButton);
 
         container.add_child(message);
-        container.add_child(entryContainer);
+        container.add_child(quantityContainer);
+        container.add_child(priceContainer);
         container.add_child(buttonContainer);
         dialog.add_child(container);
 
@@ -578,13 +619,13 @@ export default class MyExtension {
         const monitor = Main.layoutManager.primaryMonitor;
         dialog.set_position(
             Math.floor((monitor.width - 300) / 2),
-            Math.floor((monitor.height - 150) / 2)
+            Math.floor((monitor.height - 200) / 2)
         );
 
         Main.layoutManager.addChrome(dialog);
         dialog.show();
         quantityEntry.grab_key_focus();
-        quantityEntry.set_selection(0, -1); // Виділяємо весь текст
+        quantityEntry.set_selection(0, -1);
     }
 
     _repositionSearchWindow() {
@@ -595,14 +636,12 @@ export default class MyExtension {
             const windowWidth = this._window.width;
             const monitor = Main.layoutManager.primaryMonitor;
             
-            // Ставимо вікно пошуку праворуч від основного вікна
             const x = Math.min(windowX + windowWidth + 10, monitor.width - 350);
             const y = windowY;
             
             this._searchWindow.set_position(x, y);
         } catch (error) {
             console.error('Помилка позиціонування вікна пошуку:', error);
-            // Якщо не вийшло, ставимо поруч з кнопкою
             const [buttonX, buttonY] = this._button.get_transformed_position();
             const panelHeight = Main.panel.height;
             this._searchWindow.set_position(buttonX, buttonY + panelHeight + 10);
@@ -622,12 +661,28 @@ export default class MyExtension {
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
+    _calculateProfitability(currentPrice, purchasePrice) {
+        if (!purchasePrice || purchasePrice === 0) return 0;
+        return ((currentPrice - purchasePrice) / purchasePrice) * 100;
+    }
+
     _updatePortfolioData() {
+        if (!this._assetsContainer) return;
+        
         this._assetsContainer.destroy_all_children();
-        this._chartLegend.destroy_all_children();
+        if (this._chartLegend) {
+            this._chartLegend.destroy_all_children();
+        }
         
         let totalValue = 0;
+        
+        // Спочатку перевіряємо дані
+        log(`Оновлення портфеля: ${this._assetsData.length} активів`);
         this._assetsData.forEach(asset => {
+            // Гарантуємо, що всі обов'язкові поля існують
+            if (!asset.purchasePrice) asset.purchasePrice = asset.price || 0;
+            if (!asset.quantity) asset.quantity = 1;
+            
             const assetValue = asset.price * asset.quantity;
             totalValue += assetValue;
         });
@@ -635,23 +690,34 @@ export default class MyExtension {
         this._assetsData.forEach((asset, index) => {
             const assetValue = asset.price * asset.quantity;
             const percentage = totalValue > 0 ? (assetValue / totalValue * 100) : 0;
+            const profitability = this._calculateProfitability(asset.price, asset.purchasePrice);
             
             const assetRow = new St.BoxLayout({
                 style_class: "asset-row"
             });
             
+            // Символ
             assetRow.add_child(new St.Label({
                 text: asset.symbol,
                 style_class: 'asset-symbol',
-                width: 80
+                width: 60
             }));
             
+            // Поточна ціна
             assetRow.add_child(new St.Label({
                 text: `$${asset.price.toFixed(2)}`,
                 style_class: 'asset-price',
-                width: 80
+                width: 70
             }));
 
+            // Ціна придбання
+            assetRow.add_child(new St.Label({
+                text: `$${asset.purchasePrice.toFixed(2)}`,
+                style_class: 'asset-purchase-price',
+                width: 70
+            }));
+
+            // Кількість та кнопка редагування
             const quantityContainer = new St.BoxLayout({
                 style_class: 'quantity-container'
             });
@@ -659,10 +725,9 @@ export default class MyExtension {
             quantityContainer.add_child(new St.Label({
                 text: asset.quantity.toString(),
                 style_class: 'asset-quantity',
-                width: 50
+                width: 40
             }));
 
-            // Кнопка редагування (олівець)
             const editButton = new St.Button({
                 child: new St.Icon({ 
                     icon_name: 'document-edit-symbolic',
@@ -681,31 +746,43 @@ export default class MyExtension {
             quantityContainer.add_child(editButton);
             assetRow.add_child(quantityContainer);
             
+            // Дохідність
+            const profitabilityColor = profitability >= 0 ? 'profit-positive' : 'profit-negative';
+            assetRow.add_child(new St.Label({
+                text: `${profitability.toFixed(2)}%`,
+                style_class: `asset-profitability ${profitabilityColor}`,
+                width: 90
+            }));
+            
             this._assetsContainer.add_child(assetRow);
             
-            const legendItem = new St.BoxLayout({
-                style_class: 'legend-item'
-            });
-            
-            const colorBox = new St.Widget({
-                style: `background-color: ${asset.color}; width: 12px; height: 12px; border-radius: 2px;`
-            });
-            
-            const legendLabel = new St.Label({
-                text: `${asset.symbol} (${percentage.toFixed(1)}%)`,
-                style_class: 'legend-label'
-            });
-            
-            legendItem.add_child(colorBox);
-            legendItem.add_child(legendLabel);
-            this._chartLegend.add_child(legendItem);
+            if (this._chartLegend) {
+                const legendItem = new St.BoxLayout({
+                    style_class: 'legend-item'
+                });
+                
+                const colorBox = new St.Widget({
+                    style: `background-color: ${asset.color || '#73fc03ff'}; width: 12px; height: 12px; border-radius: 2px;`
+                });
+                
+                const legendLabel = new St.Label({
+                    text: `${asset.symbol} (${percentage.toFixed(1)}%)`,
+                    style_class: 'legend-label'
+                });
+                
+                legendItem.add_child(colorBox);
+                legendItem.add_child(legendLabel);
+                this._chartLegend.add_child(legendItem);
+            }
         });
         
-        this._totalValueLabel.set_text(`Загальна вартість: $${totalValue.toFixed(2)}`);
-        this._chartArea.queue_repaint();
+        if (this._totalValueLabel) {
+            this._totalValueLabel.set_text(`Загальна вартість: $${totalValue.toFixed(2)}`);
+        }
         
-        // Зберігаємо дані після оновлення
-        this._saveAssetsData();
+        if (this._chartArea) {
+            this._chartArea.queue_repaint();
+        }
     }
 
     _editAsset(index) {
@@ -716,7 +793,7 @@ export default class MyExtension {
             style_class: 'edit-dialog',
             reactive: true,
             can_focus: true,
-            width: 350,
+            width: 300,
             height: 200
         });
 
@@ -739,17 +816,33 @@ export default class MyExtension {
             style_class: 'edit-content'
         });
 
-        const quantityContainer = new St.BoxLayout();
+        // Поле для кількості
+        const quantityContainer = new St.BoxLayout({
+            style_class: 'edit-field-container'
+        });
         quantityContainer.add_child(new St.Label({
             text: 'Кількість:',
             style_class: 'edit-label'
         }));
-        
         const quantityEntry = new St.Entry({
             text: asset.quantity.toString(),
             style_class: 'edit-entry'
         });
         quantityContainer.add_child(quantityEntry);
+
+        // Поле для ціни придбання
+        const priceContainer = new St.BoxLayout({
+            style_class: 'edit-field-container'
+        });
+        priceContainer.add_child(new St.Label({
+            text: 'Ціна придбання:',
+            style_class: 'edit-label'
+        }));
+        const priceEntry = new St.Entry({
+            text: asset.purchasePrice.toFixed(2),
+            style_class: 'edit-entry'
+        });
+        priceContainer.add_child(priceEntry);
 
         const buttonContainer = new St.BoxLayout({
             style_class: 'edit-buttons'
@@ -772,17 +865,24 @@ export default class MyExtension {
 
         saveButton.connect('clicked', () => {
             const newQuantity = parseInt(quantityEntry.text) || 1;
-            if (newQuantity > 0) {
+            const newPurchasePrice = parseFloat(priceEntry.text) || asset.purchasePrice;
+            
+            if (newQuantity > 0 && newPurchasePrice > 0) {
                 asset.quantity = newQuantity;
+                asset.purchasePrice = newPurchasePrice;
                 this._updatePortfolioData();
+                this._saveAssetsData();
                 Main.layoutManager.removeChrome(dialog);
                 Main.notify(`Оновлено ${asset.symbol}`);
+            } else {
+                Main.notify('Будь ласка, введіть коректні значення');
             }
         });
 
         deleteButton.connect('clicked', () => {
             this._assetsData.splice(index, 1);
             this._updatePortfolioData();
+            this._saveAssetsData();
             Main.layoutManager.removeChrome(dialog);
             Main.notify(`Видалено ${asset.symbol}`);
         });
@@ -796,6 +896,7 @@ export default class MyExtension {
         buttonContainer.add_child(cancelButton);
 
         content.add_child(quantityContainer);
+        content.add_child(priceContainer);
         content.add_child(buttonContainer);
 
         container.add_child(header);
@@ -805,7 +906,7 @@ export default class MyExtension {
         // Позиціонування
         const monitor = Main.layoutManager.primaryMonitor;
         dialog.set_position(
-            Math.floor((monitor.width - 350) / 2),
+            Math.floor((monitor.width - 300) / 2),
             Math.floor((monitor.height - 200) / 2)
         );
 
@@ -841,7 +942,7 @@ export default class MyExtension {
             cr.lineTo(centerX, centerY);
             cr.closePath();
             
-            const color = asset.color;
+            const color = asset.color || '#73fc03ff';
             cr.setSourceRGBA(
                 parseInt(color.substr(1, 2), 16) / 255,
                 parseInt(color.substr(3, 2), 16) / 255,

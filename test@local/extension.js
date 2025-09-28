@@ -15,10 +15,13 @@ export default class MyExtension {
         this._isSearchVisible = false;
         this._assetsData = [];
         this._searchField = null;
+        this._dataFile = null;
     }
 
 
     enable() {
+        this._initDataStorage();
+        this._loadAssetsData();
         this._button = new PanelMenu.Button(30.0, 'MyExtension', false);
         this._button.add_style_class_name('myextension-button');
         this._portfolioIcon = new St.Icon({
@@ -30,7 +33,86 @@ export default class MyExtension {
             this._togglePortfolioWindow();
             return Clutter.EVENT_STOP;
         });
-        Main.panel.addToStatusArea('MyExtension', this._button, 30, 'left');
+        Main.panel.addToStatusArea('test', this._button, 30, 'left');
+    }
+
+    _initDataStorage() {
+        try {
+            // Отримуємо стандартну директорію для даних користувача
+            const userDataDir = GLib.get_user_data_dir(); // Зазвичай ~/.local/share
+            const extensionDataDir = `${userDataDir}/gnome-shell/extensions/test@local`;
+            
+            // Альтернативний варіант - використовуємо config директорію
+            const userConfigDir = GLib.get_user_config_dir(); // Зазвичай ~/.config
+            const configDataDir = `${userConfigDir}/test-portfolio`;
+            
+            // Вибираємо найкращий варіант
+            let dataDir;
+            if (GLib.file_test(extensionDataDir, GLib.FileTest.EXISTS)) {
+                // Якщо директорія extension існує (для встановлених extensions)
+                dataDir = extensionDataDir;
+            } else {
+                // Інакше використовуємо config директорію
+                dataDir = configDataDir;
+            }
+            
+            // Створюємо директорію якщо не існує
+            if (!GLib.file_test(dataDir, GLib.FileTest.EXISTS)) {
+                GLib.mkdir_with_parents(dataDir, 0o755);
+                log(`Створено директорію для даних: ${dataDir}`);
+            }
+            
+            this._dataFile = `${dataDir}/portfolio.json`;
+            log(`Файл даних: ${this._dataFile}`);
+            
+        } catch (e) {
+            log(`Помилка ініціалізації сховища: ${e}`);
+            // Резервний варіант - домашня директорія
+            const homeDir = GLib.get_home_dir();
+            this._dataFile = `${homeDir}/.test-portfolio.json`;
+        }
+    }
+
+    _loadAssetsData() {
+        try {
+            if (GLib.file_test(this._dataFile, GLib.FileTest.EXISTS)) {
+                const [success, contents] = GLib.file_get_contents(this._dataFile);
+                if (success) {
+                    const decoder = new TextDecoder('utf-8');
+                    const jsonString = decoder.decode(contents);
+                    const data = JSON.parse(jsonString);
+                    this._assetsData = data.assets || [];
+                    log(`Завантажено ${this._assetsData.length} активів`);
+                }
+            } else {
+                // Файл не існує - створюємо порожній портфель
+                this._assetsData = [];
+                this._saveAssetsData();
+                log('Створено новий порожній портфель');
+            }
+        } catch (e) {
+            log(`Помилка завантаження даних: ${e}`);
+            this._assetsData = [];
+        }
+    }
+
+    _saveAssetsData() {
+        try {
+            const data = {
+                version: '1.0',
+                lastUpdate: new Date().toISOString(),
+                assets: this._assetsData
+            };
+            
+            const encoder = new TextEncoder();
+            const jsonString = JSON.stringify(data, null, 2);
+            const bytes = encoder.encode(jsonString);
+            
+            GLib.file_set_contents(this._dataFile, bytes);
+            log(`Збережено ${this._assetsData.length} активів`);
+        } catch (e) {
+            log(`Помилка збереження даних: ${e}`);
+        }
     }
 
     _searchAsset(symbol) {
@@ -461,13 +543,7 @@ export default class MyExtension {
         this._assetsContainer.destroy_all_children();
         this._chartLegend.destroy_all_children();
         
-        if (this._assetsData.length === 0) {
-            this._assetsData = [
-                { symbol: 'QWER.US', price: 150.25, quantity: 10, color: '#70ff4cff' },
-                { symbol: 'EEEE.EU', price: 45.80, quantity: 25, color: '#33ff00ff' },
-            ];
-        }
-        
+        // ВИДАЛЕНО тестові дані - використовуємо тільки збережені
         let totalValue = 0;
         this._assetsData.forEach(asset => {
             const assetValue = asset.price * asset.quantity;
@@ -504,7 +580,6 @@ export default class MyExtension {
                 width: 50
             }));
 
-             // Кнопка видалення
             const deleteButton = new St.Button({
                 child: new St.Icon({ 
                     icon_name: 'window-close-symbolic',
@@ -545,6 +620,9 @@ export default class MyExtension {
         
         this._totalValueLabel.set_text(`Загальна вартість: $${totalValue.toFixed(2)}`);
         this._chartArea.queue_repaint();
+        
+        // Зберігаємо дані після оновлення
+        this._saveAssetsData();
     }
 
     _removeAsset(index) {

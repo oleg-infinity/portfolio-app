@@ -1,0 +1,20 @@
+{
+  "version": "1.0",
+  "lastUpdate": "2025-09-28T11:59:17.031Z",
+  "assets": [
+    {
+      "symbol": "SPLG",
+      "price": 77.85,
+      "name": "SPDR Portfolio S&P 500 ETF",
+      "quantity": 3,
+      "color": "#1b6808ff"
+    },
+    {
+      "symbol": "BTG",
+      "price": 4.92,
+      "name": "B2Gold Corp",
+      "quantity": 3,
+      "color": "#4ECDC4"
+    }
+  ]
+}

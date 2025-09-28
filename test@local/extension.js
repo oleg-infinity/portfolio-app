@@ -167,7 +167,6 @@ export default class MyExtension {
         });
     }
    
-    // Решта коду залишається без змін...
     _toggleSearchWindow() {
         if (this._isSearchVisible) {
             this._hideSearchWindow();
@@ -478,20 +477,9 @@ export default class MyExtension {
             const asset = await this._searchAsset(symbol);
             
             if (asset) {
-                asset.quantity = 1;
-                asset.color = this._getRandomColor();
-                
-                // Перевіряємо, чи актив вже є в портфелі
-                const existingIndex = this._assetsData.findIndex(a => a.symbol === asset.symbol);
-                if (existingIndex >= 0) {
-                    this._assetsData[existingIndex].quantity += 1;
-                } else {
-                    this._assetsData.push(asset);
-                }
-                
-                this._updatePortfolioData();
+                // Запитуємо кількість після успішного пошуку
+                this._askForQuantity(asset);
                 this._hideSearchWindow();
-                Main.notify(`Актив "${symbol}" додано до портфелю`);
             } else {
                 Main.notify(`Актив "${symbol}" не знайдено`);
             }
@@ -502,6 +490,101 @@ export default class MyExtension {
             searchBtn.label = 'Знайти та додати';
             searchBtn.set_reactive(true);
         }
+    }
+
+    _askForQuantity(asset) {
+        const dialog = new St.Widget({
+            style_class: 'quantity-dialog',
+            reactive: true,
+            can_focus: true,
+            width: 300,
+            height: 150
+        });
+
+        const container = new St.BoxLayout({
+            vertical: true,
+            style_class: 'quantity-container-dialog'
+        });
+
+        const message = new St.Label({
+            text: `Введіть кількість для ${asset.symbol}:`,
+            style_class: 'quantity-message'
+        });
+
+        const entryContainer = new St.BoxLayout();
+        const quantityEntry = new St.Entry({
+            text: '1',
+            style_class: 'quantity-entry'
+        });
+        entryContainer.add_child(quantityEntry);
+
+        const buttonContainer = new St.BoxLayout({
+            style_class: 'quantity-buttons'
+        });
+
+        const addButton = new St.Button({
+            label: 'Додати',
+            style_class: 'quantity-add-button'
+        });
+
+        const cancelButton = new St.Button({
+            label: 'Скасувати',
+            style_class: 'quantity-cancel-button'
+        });
+
+        addButton.connect('clicked', () => {
+            const quantity = parseInt(quantityEntry.text) || 1;
+            if (quantity > 0) {
+                asset.quantity = quantity;
+                asset.color = this._getRandomColor();
+                
+                // Перевіряємо, чи актив вже є в портфелі
+                const existingIndex = this._assetsData.findIndex(a => a.symbol === asset.symbol);
+                if (existingIndex >= 0) {
+                    this._assetsData[existingIndex].quantity += quantity;
+                } else {
+                    this._assetsData.push(asset);
+                }
+                
+                this._updatePortfolioData();
+                Main.layoutManager.removeChrome(dialog);
+                Main.notify(`Додано ${quantity} ${asset.symbol}`);
+            }
+        });
+
+        cancelButton.connect('clicked', () => {
+            Main.layoutManager.removeChrome(dialog);
+        });
+
+        // Обробка Enter
+        quantityEntry.connect('key-press-event', (actor, event) => {
+            const key = event.get_key_symbol();
+            if (key === Clutter.KEY_Return || key === Clutter.KEY_KP_Enter) {
+                addButton.emit('clicked');
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
+        });
+
+        buttonContainer.add_child(addButton);
+        buttonContainer.add_child(cancelButton);
+
+        container.add_child(message);
+        container.add_child(entryContainer);
+        container.add_child(buttonContainer);
+        dialog.add_child(container);
+
+        // Позиціонування по центру
+        const monitor = Main.layoutManager.primaryMonitor;
+        dialog.set_position(
+            Math.floor((monitor.width - 300) / 2),
+            Math.floor((monitor.height - 150) / 2)
+        );
+
+        Main.layoutManager.addChrome(dialog);
+        dialog.show();
+        quantityEntry.grab_key_focus();
+        quantityEntry.set_selection(0, -1); // Виділяємо весь текст
     }
 
     _repositionSearchWindow() {
@@ -543,7 +626,6 @@ export default class MyExtension {
         this._assetsContainer.destroy_all_children();
         this._chartLegend.destroy_all_children();
         
-        // ВИДАЛЕНО тестові дані - використовуємо тільки збережені
         let totalValue = 0;
         this._assetsData.forEach(asset => {
             const assetValue = asset.price * asset.quantity;
@@ -580,22 +662,23 @@ export default class MyExtension {
                 width: 50
             }));
 
-            const deleteButton = new St.Button({
+            // Кнопка редагування (олівець)
+            const editButton = new St.Button({
                 child: new St.Icon({ 
-                    icon_name: 'window-close-symbolic',
-                    style_class: 'delete-icon'
+                    icon_name: 'document-edit-symbolic',
+                    style_class: 'edit-icon'
                 }),
-                style_class: 'delete-button',
+                style_class: 'edit-button',
                 reactive: true,
                 can_focus: true,
                 track_hover: true
             });
         
-            deleteButton.connect('clicked', () => {
-                this._removeAsset(index);
+            editButton.connect('clicked', () => {
+                this._editAsset(index);
             });
 
-            quantityContainer.add_child(deleteButton);
+            quantityContainer.add_child(editButton);
             assetRow.add_child(quantityContainer);
             
             this._assetsContainer.add_child(assetRow);
@@ -625,14 +708,111 @@ export default class MyExtension {
         this._saveAssetsData();
     }
 
-    _removeAsset(index) {
-        if (index >= 0 && index < this._assetsData.length) {
-            const removedAsset = this._assetsData[index];
+    _editAsset(index) {
+        if (index < 0 || index >= this._assetsData.length) return;
+        
+        const asset = this._assetsData[index];
+        const dialog = new St.Widget({
+            style_class: 'edit-dialog',
+            reactive: true,
+            can_focus: true,
+            width: 350,
+            height: 200
+        });
+
+        const container = new St.BoxLayout({
+            vertical: true,
+            style_class: 'edit-container'
+        });
+
+        const header = new St.BoxLayout({
+            style_class: 'edit-header'
+        });
+        
+        header.add_child(new St.Label({
+            text: `Редагування ${asset.symbol}`,
+            style_class: 'edit-title'
+        }));
+
+        const content = new St.BoxLayout({
+            vertical: true,
+            style_class: 'edit-content'
+        });
+
+        const quantityContainer = new St.BoxLayout();
+        quantityContainer.add_child(new St.Label({
+            text: 'Кількість:',
+            style_class: 'edit-label'
+        }));
+        
+        const quantityEntry = new St.Entry({
+            text: asset.quantity.toString(),
+            style_class: 'edit-entry'
+        });
+        quantityContainer.add_child(quantityEntry);
+
+        const buttonContainer = new St.BoxLayout({
+            style_class: 'edit-buttons'
+        });
+
+        const saveButton = new St.Button({
+            label: 'Зберегти',
+            style_class: 'edit-save-button'
+        });
+
+        const deleteButton = new St.Button({
+            label: 'Видалити',
+            style_class: 'edit-delete-button'
+        });
+
+        const cancelButton = new St.Button({
+            label: 'Скасувати',
+            style_class: 'edit-cancel-button'
+        });
+
+        saveButton.connect('clicked', () => {
+            const newQuantity = parseInt(quantityEntry.text) || 1;
+            if (newQuantity > 0) {
+                asset.quantity = newQuantity;
+                this._updatePortfolioData();
+                Main.layoutManager.removeChrome(dialog);
+                Main.notify(`Оновлено ${asset.symbol}`);
+            }
+        });
+
+        deleteButton.connect('clicked', () => {
             this._assetsData.splice(index, 1);
-    
             this._updatePortfolioData();
-            Main.notify(`Актив "${removedAsset.symbol}" видалено з портфелю`);
-        }
+            Main.layoutManager.removeChrome(dialog);
+            Main.notify(`Видалено ${asset.symbol}`);
+        });
+
+        cancelButton.connect('clicked', () => {
+            Main.layoutManager.removeChrome(dialog);
+        });
+
+        buttonContainer.add_child(saveButton);
+        buttonContainer.add_child(deleteButton);
+        buttonContainer.add_child(cancelButton);
+
+        content.add_child(quantityContainer);
+        content.add_child(buttonContainer);
+
+        container.add_child(header);
+        container.add_child(content);
+        dialog.add_child(container);
+
+        // Позиціонування
+        const monitor = Main.layoutManager.primaryMonitor;
+        dialog.set_position(
+            Math.floor((monitor.width - 350) / 2),
+            Math.floor((monitor.height - 200) / 2)
+        );
+
+        Main.layoutManager.addChrome(dialog);
+        dialog.show();
+        quantityEntry.grab_key_focus();
+        quantityEntry.set_selection(0, -1);
     }
 
     _drawChart(area) {

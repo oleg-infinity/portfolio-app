@@ -292,3 +292,56 @@
     background-color: rgba(74, 144, 217, 0.5);
     color: rgba(255, 255, 255, 0.5);
 }
+
+/* Стилі для кнопки видалення */
+/* Стилі для кнопки видалення */
+.delete-button {
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+    margin-left: 5px;
+    min-width: 24px;
+    min-height: 24px;
+}
+
+.delete-button:hover {
+    background-color: rgba(255, 0, 0, 0.2);
+}
+
+.delete-button:active {
+    background-color: rgba(255, 0, 0, 0.3);
+}
+
+.delete-icon {
+    color: #ff6b6b;
+    width: 16px;
+    height: 16px;
+}
+
+.quantity-container {
+    spacing: 5px;
+    align-items: center;
+}
+
+.asset-row {
+    padding: 8px 5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    align-items: center;
+}
+
+.asset-row:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.asset-symbol, .asset-price, .asset-quantity {
+    font-size: 12px;
+    color: #ffffff;
+    min-width: 80px;
+}
+
+.asset-quantity {
+    min-width: 50px;
+}
+
+/* Видалив всі width властивості з відсотками */

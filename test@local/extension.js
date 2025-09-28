@@ -474,7 +474,7 @@ export default class MyExtension {
             totalValue += assetValue;
         });
         
-        this._assetsData.forEach(asset => {
+        this._assetsData.forEach((asset, index) => {
             const assetValue = asset.price * asset.quantity;
             const percentage = totalValue > 0 ? (assetValue / totalValue * 100) : 0;
             
@@ -485,20 +485,43 @@ export default class MyExtension {
             assetRow.add_child(new St.Label({
                 text: asset.symbol,
                 style_class: 'asset-symbol',
-                width: 100
+                width: 80
             }));
             
             assetRow.add_child(new St.Label({
                 text: `$${asset.price.toFixed(2)}`,
                 style_class: 'asset-price',
-                width: 100
+                width: 80
             }));
+
+            const quantityContainer = new St.BoxLayout({
+                style_class: 'quantity-container'
+            });
             
-            assetRow.add_child(new St.Label({
+            quantityContainer.add_child(new St.Label({
                 text: asset.quantity.toString(),
                 style_class: 'asset-quantity',
-                width: 100
+                width: 50
             }));
+
+             // Кнопка видалення
+            const deleteButton = new St.Button({
+                child: new St.Icon({ 
+                    icon_name: 'window-close-symbolic',
+                    style_class: 'delete-icon'
+                }),
+                style_class: 'delete-button',
+                reactive: true,
+                can_focus: true,
+                track_hover: true
+            });
+        
+            deleteButton.connect('clicked', () => {
+                this._removeAsset(index);
+            });
+
+            quantityContainer.add_child(deleteButton);
+            assetRow.add_child(quantityContainer);
             
             this._assetsContainer.add_child(assetRow);
             
@@ -522,6 +545,16 @@ export default class MyExtension {
         
         this._totalValueLabel.set_text(`Загальна вартість: $${totalValue.toFixed(2)}`);
         this._chartArea.queue_repaint();
+    }
+
+    _removeAsset(index) {
+        if (index >= 0 && index < this._assetsData.length) {
+            const removedAsset = this._assetsData[index];
+            this._assetsData.splice(index, 1);
+    
+            this._updatePortfolioData();
+            Main.notify(`Актив "${removedAsset.symbol}" видалено з портфелю`);
+        }
     }
 
     _drawChart(area) {

@@ -1,90 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,200..800;1,300..800&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
 /* Portfolio Window Styles */
 .portfolio-window {
     background-color: rgba(22, 22, 22, 0.98);
-    border: 2px solid #525252;
-    border-radius: 12px;
+    border: 1px solid #525252;
+    border-radius: 24px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     padding: 15px;
 }
 
 .portfolio-container {
-    spacing: 12px;
     min-width: 350px;
 }
 
 .portfolio-header {
-    width: max-content;
-    spacing: 10px;
-    border-bottom: 1px solid #44475a;
+    width: 448px;
+    height:80px;
+    margin: 1px 1px 0 1px;
+    background-color: #222222;
+    border-radius: 24px 24px 0 0;
     justify-content: space-between;
 }
 
+.title-container {
+    width: 90%;
+    margin: 0;
+}
+
 .portfolio-title {
-    padding: 20px;
-    font-size: 22px;
+    margin: 10px 0;
+    padding: 10px;
+    font-size: 25px;
     font-weight: bold;
     color: #f8f8f2;
+    font-family: "Open Sans", sans-serif;
+    font-weight: 300;
+}
+
+.search-container {
+    margin: 15px;
+    width: auto;
 }
 
 .search-button {
-    background-color: #6bff5d;
-    color: #282a36;
-    border: none;
-    border-radius: 5px;
-    padding: 6px 12px;
-    font-size: 12px;
+    position:absolute;
+    left: 80px;
+    background-color: #222222;
+    opacity: 0.9;
+    color: #ffffff;
+    border:1px solid #525252;
+    border-radius: 24px;
+    margin: 0;
+    padding: 15px;
+    /*font-size: 12px;*/
+    max-width: 25px;
+    max-height: 25px;
+    box-shadow: 0 0 20px rgba(52, 52, 52, 0.712);
+    transition-duration: 0.5s;
+
+
+    opacity: 1;
+	animation-name: fadeInOpacity;
+	animation-iteration-count: infinite;
+	animation-timing-function: ease-in;
+	animation-duration: 2s;
+    animation-direction: alternate;
+}
+
+@keyframes fadeInOpacity {
+	0% {
+		opacity: 0;
+        color: #13e000;
+	}
+	100% {
+		opacity: 1;
+        color: #85ff7a;
+	}
+}
+
+.search-icon {
+    width: 20px;
+    height: 20px;
 }
 
 .search-button:hover {
-    background-color: #94ff7a;
+    background-color: #303030;
+    border:1px solid #85ff33;
+    box-shadow: 0 0 20px rgba(85, 180, 33, 0.712);
+    transition-duration: 0.5s;
+}
+
+.horizontal-line {
+    height: 1px;
+    background-color: #85ff33;
+    box-shadow: 0 0 20px rgba(85, 180, 33, 1);
+    margin: 0;
 }
 
 .portfolio-content {
-    spacing: 15px;
     min-height: 200px;
+    margin: 0;
 }
 
 /* Assets Column */
 .assets-column {
-    spacing: 8px;
     min-width: 200px;
 }
 
 .assets-header {
-    spacing: 12px;
-    padding: 6px 8px;
-    border-bottom: 1px solid #44475a;
-    background-color: rgba(68, 71, 90, 0.3);
-    border-radius: 5px;
+    width: 100% !important;
+    height: 40px;
+    border-bottom: 1px solid #525252;
+    background-color: rgba(52, 52, 52, 0.3);
+    border-radius: none;
+    margin: 0 0 15px 0;
 }
 
 .assets-header-label {
-    font-size: 11px;
-    font-weight: bold;
-    color: #6272a4;
-    min-width: 60px;
+    height: 30px;
+    margin: 5px;
+    padding: 5px;
+    font-size: 12px !important;
+    font-family: 'Open Sans', sans-serif;
+    color: #c9c9c9;
+    font-weight: 200;
+    text-align: left;
 }
 
 .asset-name {
-    min-width: 70px;
+    width: 50px;
 }
 
 .asset-price {
-    min-width: 60px;
+    width: 50px;
+}
+
+.asset-purchase-price{
+    width: 70px;
 }
 
 .asset-quantity {
-    min-width: 50px;
+    width: 70px;
+}
+
+.asset-profitability {
+    width: 70px;
 }
 
 .assets-container {
-    spacing: 4px;
     max-height: 180px;
     overflow-y: auto;
 }
 
 .asset-row {
-    spacing: 12px;
     padding: 8px 10px;
     border-radius: 6px;
     background-color: rgba(0, 0, 0, 0.3);
@@ -101,12 +168,7 @@
     color: #f8f8f2;
 }
 
-.asset-price {
-    font-size: 11px;
-    color: #50fa7b;
-}
-
-.asset-quantity {
+.row-quantity {
     font-size: 11px;
     color: #f8f8f2;
 }
@@ -334,14 +396,34 @@
     background-color: rgba(255, 255, 255, 0.05);
 }
 
-.asset-symbol, .asset-price, .asset-quantity {
+.row-symbol {
     font-size: 12px;
     color: #ffffff;
-    min-width: 80px;
+    width: 50px;
 }
 
-.asset-quantity {
-    min-width: 50px;
+.row-price {
+    font-size: 12px;
+    color: #ffffff;
+    width: 50px;
+}
+
+.row-purchase-price {
+    font-size: 12px;
+    color: #ffffff;
+    width: 70px;
+}
+
+.row-quantity {
+    font-size: 12px;
+    color: #ffffff;
+    width: 70px;
+}
+
+.row-profitability {
+    font-size: 12px;
+    color: #ffffff;
+    width: 70px;
 }
 
 /* Стилі для діалогу кількості */

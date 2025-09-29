@@ -184,7 +184,6 @@ export default class MyExtension {
         this._portfolioIcon.icon_name = 'folder-open-symbolic';
         this._updatePortfolioData();
         this._window.show();
-        this._window.raise_top();
     }
 
     _hidePortfolioWindow() {
@@ -202,7 +201,7 @@ export default class MyExtension {
             reactive: true,
             can_focus: true,
             track_hover: true,
-            width: 600,
+            width: 450,
             height: 750
         });
 
@@ -216,23 +215,43 @@ export default class MyExtension {
         const header = new St.BoxLayout({
             style_class: 'portfolio-header'
         });
-        
+
+        const titleContainer = new St.BoxLayout({
+            style_class: 'title-container',
+            x_expand: true
+        });
+    
         const title = new St.Label({
-            text: 'Мій портфель',
+            text: 'My Portfolio',
             style_class: 'portfolio-title'
         });
-        header.add_child(title);
+        titleContainer.add_child(title);
+
+        const searchContainer = new St.BoxLayout({
+            style_class: 'search-container'
+        });
 
         const searchButton = new St.Button({
-            child: new St.Icon({ icon_name: 'edit-find-symbolic' }),
+            child: new St.Icon({ 
+                icon_name: 'edit-find-symbolic',
+                style_class: 'search-icon'
+            }),
             style_class: 'search-button'
         });
+        searchContainer.add_child(searchButton);
         searchButton.connect('clicked', () => {
             this._showSearchWindow();
         });
-        header.add_child(searchButton);
+        header.add_child(titleContainer);
+        header.add_child(searchContainer);
 
+        const horizontalLine = new St.BoxLayout({
+            style_class: 'horizontal-line'
+        });
+
+        // Основний контент - тільки таблиця активів
         const contentArea = new St.BoxLayout({
+            vertical: true,
             style_class: 'portfolio-content',
             x_expand: true,
             y_expand: true
@@ -242,100 +261,114 @@ export default class MyExtension {
             vertical: true,
             style_class: 'assets-column',
             x_expand: true,
-            width: 400,
-            height: 450
+            y_expand: true
         });
 
         const assetsHeader = new St.BoxLayout({
-            style_class: 'assets-header',
-            width: 400
+            style_class: 'assets-header'
         });
-        
+    
         assetsHeader.add_child(new St.Label({
-            text: 'Актив',
-            style_class: 'assets-header-label asset-name',
-            width: 60
+            text: 'TAG',
+            style_class: 'assets-header-label asset-name'
         }));
-        
+    
         assetsHeader.add_child(new St.Label({
-            text: 'Поточна',
-            style_class: 'assets-header-label asset-price',
-            width: 70
+            text: 'PRICE',
+            style_class: 'assets-header-label asset-price'
         }));
-        
+    
         assetsHeader.add_child(new St.Label({
-            text: 'Придб.',
-            style_class: 'assets-header-label asset-purchase-price',
-            width: 70
+            text: 'BOUGHT',
+            style_class: 'assets-header-label asset-purchase-price'
         }));
-        
+    
         assetsHeader.add_child(new St.Label({
-            text: 'Кількість',
-            style_class: 'assets-header-label asset-quantity',
-            width: 70
+            text: 'QUANTITY',
+            style_class: 'assets-header-label asset-quantity'
         }));
-        
+    
         assetsHeader.add_child(new St.Label({
-            text: 'Дохідність',
-            style_class: 'assets-header-label asset-profitability',
-            width: 90
+            text: 'INCOME',
+            style_class: 'assets-header-label asset-profitability'
         }));
 
         assetsColumn.add_child(assetsHeader);
 
         this._assetsContainer = new St.BoxLayout({
-            vertical: true,
+             vertical: true,
             style_class: 'assets-container',
             x_expand: true,
-            y_expand: true,
-            width: 400,
-            height: 500
+            y_expand: true
         });
-        
+    
         assetsColumn.add_child(this._assetsContainer);
+        contentArea.add_child(assetsColumn);
 
-        const chartColumn = new St.BoxLayout({
+        // Нижня частина - статистика та діаграма
+        const bottomSection = new St.BoxLayout({
+            style_class: 'portfolio-bottom-section'
+        });
+
+        // Ліва частина - статистика
+        const statsContainer = new St.BoxLayout({
             vertical: true,
-            style_class: 'chart-column'
+            style_class: 'stats-container',
+            x_expand: true,
+            y_expand: true
+        });
+
+        this._totalValueLabel = new St.Label({
+            text: 'Загальна вартість: $0.00',
+            style_class: 'total-value'
+        });
+        statsContainer.add_child(this._totalValueLabel);
+
+        this._totalProfitLabel = new St.Label({
+            text: 'Загальна дохідність: 0.00%',
+            style_class: 'total-profit'
+        });
+        statsContainer.add_child(this._totalProfitLabel);
+
+        this._totalInvestmentLabel = new St.Label({
+            text: 'Загальні інвестиції: $0.00',
+            style_class: 'total-investment'
+        });
+        statsContainer.add_child(this._totalInvestmentLabel);
+
+        // Права частина - діаграма та легенда
+        const chartContainer = new St.BoxLayout({
+            vertical: true,
+            style_class: 'chart-container'
         });
 
         this._chartArea = new St.DrawingArea({
             style_class: 'chart-area',
-            width: 150,
-            height: 150
+            width: 180,
+            height: 180
         });
-        
+    
         this._chartArea.connect('repaint', (area) => {
             this._drawChart(area);
         });
 
-        chartColumn.add_child(this._chartArea);
+        chartContainer.add_child(this._chartArea);
 
         this._chartLegend = new St.BoxLayout({
             vertical: true,
             style_class: 'chart-legend'
         });
-        chartColumn.add_child(this._chartLegend);
+        chartContainer.add_child(this._chartLegend);
 
-        contentArea.add_child(assetsColumn);
-        contentArea.add_child(chartColumn);
-
-        const footer = new St.BoxLayout({
-            style_class: 'portfolio-footer'
-        });
-        
-        this._totalValueLabel = new St.Label({
-            text: 'Загальна вартість: $0.00',
-            style_class: 'total-value'
-        });
-        footer.add_child(this._totalValueLabel);
-
+        bottomSection.add_child(statsContainer);
+        bottomSection.add_child(chartContainer);
         mainContainer.add_child(header);
+        mainContainer.add_child(horizontalLine);
         mainContainer.add_child(contentArea);
-        mainContainer.add_child(footer);
+        mainContainer.add_child(bottomSection);
         this._window.add_child(mainContainer);
         this._repositionWindow();
-        
+    
         this._window.connect('button-press-event', (actor, event) => {
             return Clutter.EVENT_STOP;
         });
@@ -657,7 +690,7 @@ export default class MyExtension {
     }
 
     _getRandomColor() {
-        const colors = ['#73fc03ff', '#4ECDC4', '#1b6808ff', '#96CEB4', '#FFE66D', '#FFA07A', '#98D8C8', '#F7DC6F'];
+        const colors = ['#ffa0a0ff', '#acfff9ff', '#b8ffa7ff', '#9bffbcff', '#FFE66D', '#FFA07A', '#98D8C8', '#F7DC6F'];
         return colors[Math.floor(Math.random() * colors.length)];
     }
 
@@ -668,65 +701,83 @@ export default class MyExtension {
 
     _updatePortfolioData() {
         if (!this._assetsContainer) return;
-        
+    
         this._assetsContainer.destroy_all_children();
         if (this._chartLegend) {
             this._chartLegend.destroy_all_children();
         }
-        
+    
         let totalValue = 0;
-        
+        let totalInvestment = 0;
+        let totalProfit = 0;
+    
         // Спочатку перевіряємо дані
         log(`Оновлення портфеля: ${this._assetsData.length} активів`);
         this._assetsData.forEach(asset => {
             // Гарантуємо, що всі обов'язкові поля існують
             if (!asset.purchasePrice) asset.purchasePrice = asset.price || 0;
             if (!asset.quantity) asset.quantity = 1;
-            
-            const assetValue = asset.price * asset.quantity;
-            totalValue += assetValue;
-        });
         
+            const assetValue = asset.price * asset.quantity;
+            const assetInvestment = asset.purchasePrice * asset.quantity;
+            const assetProfit = assetValue - assetInvestment;
+        
+            totalValue += assetValue;
+            totalInvestment += assetInvestment;
+            totalProfit += assetProfit;
+        });
+    
+        const totalProfitability = totalInvestment > 0 ? (totalProfit / totalInvestment) * 100 : 0;
+    
         this._assetsData.forEach((asset, index) => {
             const assetValue = asset.price * asset.quantity;
             const percentage = totalValue > 0 ? (assetValue / totalValue * 100) : 0;
             const profitability = this._calculateProfitability(asset.price, asset.purchasePrice);
-            
+        
             const assetRow = new St.BoxLayout({
                 style_class: "asset-row"
             });
-            
+        
             // Символ
             assetRow.add_child(new St.Label({
                 text: asset.symbol,
-                style_class: 'asset-symbol',
-                width: 60
+                style_class: 'row-symbol'
             }));
-            
+        
             // Поточна ціна
             assetRow.add_child(new St.Label({
                 text: `$${asset.price.toFixed(2)}`,
-                style_class: 'asset-price',
-                width: 70
+                style_class: 'row-price'
             }));
 
             // Ціна придбання
             assetRow.add_child(new St.Label({
                 text: `$${asset.purchasePrice.toFixed(2)}`,
-                style_class: 'asset-purchase-price',
-                width: 70
+                style_class: 'row-purchase-price'
             }));
 
             // Кількість та кнопка редагування
             const quantityContainer = new St.BoxLayout({
                 style_class: 'quantity-container'
             });
-            
+        
             quantityContainer.add_child(new St.Label({
                 text: asset.quantity.toString(),
-                style_class: 'asset-quantity',
-                width: 40
+                style_class: 'row-quantity'
             }));
+
+            assetRow.add_child(quantityContainer);
+        
+            // Дохідність
+            const profitabilityColor = profitability >= 0 ? 'profit-positive' : 'profit-negative';
+            assetRow.add_child(new St.Label({
+                text: `${profitability.toFixed(2)}%`,
+                style_class: `row-profitability ${profitabilityColor}`
+            }));
+
+            const editButtonContainer = new St.BoxLayout({
+                style_class: 'edit-container'
+            })
 
             const editButton = new St.Button({
                 child: new St.Icon({ 
@@ -738,48 +789,51 @@ export default class MyExtension {
                 can_focus: true,
                 track_hover: true
             });
-        
+
             editButton.connect('clicked', () => {
                 this._editAsset(index);
             });
 
-            quantityContainer.add_child(editButton);
-            assetRow.add_child(quantityContainer);
-            
-            // Дохідність
-            const profitabilityColor = profitability >= 0 ? 'profit-positive' : 'profit-negative';
-            assetRow.add_child(new St.Label({
-                text: `${profitability.toFixed(2)}%`,
-                style_class: `asset-profitability ${profitabilityColor}`,
-                width: 90
-            }));
-            
+            editButtonContainer.add_child(editButton)
+            assetRow.add_child(editButtonContainer)
+        
             this._assetsContainer.add_child(assetRow);
-            
+        
             if (this._chartLegend) {
                 const legendItem = new St.BoxLayout({
                     style_class: 'legend-item'
                 });
-                
+            
                 const colorBox = new St.Widget({
                     style: `background-color: ${asset.color || '#73fc03ff'}; width: 12px; height: 12px; border-radius: 2px;`
                 });
-                
+            
                 const legendLabel = new St.Label({
                     text: `${asset.symbol} (${percentage.toFixed(1)}%)`,
                     style_class: 'legend-label'
                 });
-                
+            
                 legendItem.add_child(colorBox);
                 legendItem.add_child(legendLabel);
                 this._chartLegend.add_child(legendItem);
             }
         });
-        
+    
+        // Оновлюємо статистику
         if (this._totalValueLabel) {
             this._totalValueLabel.set_text(`Загальна вартість: $${totalValue.toFixed(2)}`);
         }
-        
+    
+        if (this._totalProfitLabel) {
+            const profitColor = totalProfitability >= 0 ? 'profit-positive' : 'profit-negative';
+            this._totalProfitLabel.set_text(`Загальна дохідність: ${totalProfitability.toFixed(2)}%`);
+            this._totalProfitLabel.style_class = `total-profit ${profitColor}`;
+        }
+    
+        if (this._totalInvestmentLabel) {
+            this._totalInvestmentLabel.set_text(`Загальні інвестиції: $${totalInvestment.toFixed(2)}`);
+        }
+    
         if (this._chartArea) {
             this._chartArea.queue_repaint();
         }

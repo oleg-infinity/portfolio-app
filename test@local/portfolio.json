@@ -1,6 +1,6 @@
 {
   "version": "1.1",
-  "lastUpdate": "2025-09-28T14:12:01.139Z",
+  "lastUpdate": "2025-09-28T22:32:45.252Z",
   "assets": [
     {
       "symbol": "GRAB",
@@ -16,7 +16,7 @@
       "name": "Snap Inc.",
       "quantity": 10,
       "color": "#FFA07A",
-      "purchasePrice": 8.27
+      "purchasePrice": 7
     },
     {
       "symbol": "BTG",
@@ -40,15 +40,7 @@
       "name": "Global X Artificial Intelligenc",
       "quantity": 1,
       "color": "#73fc03ff",
-      "purchasePrice": 48.92
-    },
-    {
-      "symbol": "MARA",
-      "price": 16.13,
-      "name": "MARA Holdings, Inc.",
-      "quantity": 1,
-      "color": "#4ECDC4",
-      "purchasePrice": 16.13
+      "purchasePrice": 48
     }
   ]
 }

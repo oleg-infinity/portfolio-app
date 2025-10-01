@@ -1,46 +1,33 @@
 {
   "version": "1.1",
-  "lastUpdate": "2025-09-28T22:32:45.252Z",
+  "lastUpdate": "2025-10-01T12:33:30.244Z",
   "assets": [
     {
-      "symbol": "GRAB",
-      "price": 6.11,
-      "name": "Grab Holdings Limited",
-      "quantity": 5,
-      "color": "#98D8C8",
-      "purchasePrice": 6.43
-    },
-    {
       "symbol": "SNAP",
-      "price": 8.27,
+      "price": 7.71,
       "name": "Snap Inc.",
       "quantity": 10,
       "color": "#FFA07A",
-      "purchasePrice": 7
-    },
-    {
-      "symbol": "BTG",
-      "price": 4.92,
-      "name": "B2Gold Corp",
-      "quantity": 3,
-      "color": "#96CEB4",
-      "purchasePrice": 4.92
-    },
-    {
-      "symbol": "AAPL",
-      "price": 255.46,
-      "name": "Apple Inc.",
-      "quantity": 2,
-      "color": "#FFA07A",
-      "purchasePrice": 255.46
+      "purchasePrice": 7,
+      "currentPrice": 7.71
     },
     {
       "symbol": "AIQ",
-      "price": 48.92,
+      "price": 49.39,
       "name": "Global X Artificial Intelligenc",
       "quantity": 1,
       "color": "#73fc03ff",
-      "purchasePrice": 48
+      "purchasePrice": 48,
+      "currentPrice": 49.39
+    },
+    {
+      "symbol": "AAPL",
+      "price": 254.63,
+      "currentPrice": 254.63,
+      "purchasePrice": 254.595,
+      "quantity": 2,
+      "name": "Apple Inc.",
+      "color": "#FFE66D"
     }
   ]
 }

@@ -1,4 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,200..800;1,300..800&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
+
+/* Основні кольори теми */
+:root {
+    -dark-bg: rgba(22, 22, 22, 0.98);
+    -header-bg: #222222;
+    -card-bg: rgba(30, 30, 30, 0.9);
+    -border-color: #525252;
+    -accent-green: #85ff33;
+    -accent-green-glow: rgba(85, 180, 33, 0.712);
+    -text-primary: #f8f8f2;
+    -text-secondary: #c9c9c9;
+    -text-muted: #cccccc;
+    -positive: #85ff33;
+    -negative: #ff6b6b;
+    -hover-bg: #303030;
+}
+
 /* Portfolio Window Styles */
 .portfolio-window {
     background-color: rgba(22, 22, 22, 0.98);
@@ -6,29 +23,33 @@
     border-radius: 24px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     padding: 15px;
+    width: 418px;
+    height: 750px;
 }
 
 .portfolio-container {
-    min-width: 350px;
+    width: 450px;
 }
 
 .portfolio-header {
     width: 448px;
-    height:80px;
+    height: 80px;
     margin: 1px 1px 0 1px;
     background-color: #222222;
     border-radius: 24px 24px 0 0;
+    display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 
 .title-container {
-    width: 90%;
-    margin: 0;
+    padding-left: 15px;
+    flex-shrink: 0;
 }
 
 .portfolio-title {
-    margin: 10px 0;
-    padding: 10px;
+    margin: 0;
+    padding: 0;
     font-size: 25px;
     font-weight: bold;
     color: #f8f8f2;
@@ -36,63 +57,146 @@
     font-weight: 300;
 }
 
+.right-container {
+    margin: 10px;
+    float: right;
+    display: flex;
+    align-items: center;
+    margin-left: auto; /* Це висуне контейнер праворуч */
+}
+
 .search-container {
-    margin: 15px;
-    width: auto;
+    margin: 5px;
 }
 
+/* Базова кнопка пошуку */
 .search-button {
-    position:absolute;
-    left: 80px;
     background-color: #222222;
-    opacity: 0.9;
-    color: #ffffff;
-    border:1px solid #525252;
-    border-radius: 24px;
+    border: 1px solid #525252;
+    border-radius: 20px;
     margin: 0;
-    padding: 15px;
-    /*font-size: 12px;*/
-    max-width: 25px;
-    max-height: 25px;
+    padding: 8px;
+    min-width: 40px;
+    min-height: 40px;
+    width: 40px;
+    height: 40px;
     box-shadow: 0 0 20px rgba(52, 52, 52, 0.712);
-    transition-duration: 0.5s;
-
-
-    opacity: 1;
-	animation-name: fadeInOpacity;
-	animation-iteration-count: infinite;
-	animation-timing-function: ease-in;
-	animation-duration: 2s;
-    animation-direction: alternate;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-@keyframes fadeInOpacity {
-	0% {
-		opacity: 0;
-        color: #13e000;
-	}
-	100% {
-		opacity: 1;
-        color: #85ff7a;
-	}
+/* Контейнер всередині кнопки */
+.search-button-content {
+    margin: 8px;
+    min-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Центрує вміст коли кнопка кругла */
 }
 
+/* Розширений стан - кнопка стає полем пошуку */
+.search-button.expanded {
+    width: 160px;
+    min-width: 160px;
+    padding: 8px 15px;
+    background-color: rgba(30, 30, 30, 0.9);
+    justify-content: space-between; /* Розподіляє простір між елементами */
+}
+
+.search-button.expanded .search-button-content {
+    justify-content: space-between; /* Розподіляє коли розширена */
+}
+
+/* Іконка пошуку */
 .search-icon {
+    color: #f8f8f2;
     width: 20px;
     height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    margin-left: 8px;
 }
 
+/* Поле пошуку всередині кнопки */
+.search-entry {
+    background-color: transparent;
+    border: none;
+    color: #f8f8f2;
+    font-size: 13px;
+    width: 0;
+    opacity: 0;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* Коли кнопка розширена, поле стає видимим */
+.search-button.expanded .search-entry {
+    width: 120px;
+    opacity: 1;
+    min-width: 120px;
+    flex: 1;
+    margin-right: 8px;
+}
+
+/* Ховер ефекти */
 .search-button:hover {
     background-color: #303030;
-    border:1px solid #85ff33;
+    border: 1px solid #85ff33;
     box-shadow: 0 0 20px rgba(85, 180, 33, 0.712);
-    transition-duration: 0.5s;
 }
 
+.search-button.expanded:hover {
+    background-color: rgba(40, 40, 40, 0.95);
+}
+
+/* Фокус на полі вводу */
+.search-entry:focus {
+    border: none;
+    box-shadow: none;
+}
+
+/* Стилі для кнопки режиму редагування */
+.edit-header-container {
+    min-width: 32px;
+    height: 32px;
+    margin: 0 15px 0 0;
+}
+
+.edit-mode-button {
+    background-color: transparent;
+    box-shadow: 0 0 20px rgba(52, 52, 52, 0.712);
+    border: 1px solid #525252;
+    border-radius: 20px;
+    padding: 8px;
+    min-width: 32px;
+    min-height: 32px;
+}
+
+.edit-mode-button:hover {
+    background-color: #303030;
+    box-shadow: 0 0 20px rgba(85, 180, 33, 0.712);
+    border: 1px solid #85ff33;
+}
+
+.edit-mode-button:active {
+    background-color: #303030;
+    box-shadow: 0 0 20px rgba(85, 180, 33, 0.712);
+    border: 1px solid #85ff33;
+}
+
+.edit-mode-icon {
+    color: #c9c9c9;
+    width: 16px;
+    height: 16px;
+}
+
+/* Роздільна лінія */
 .horizontal-line {
     height: 1px;
     background-color: #85ff33;
-    box-shadow: 0 0 20px rgba(85, 180, 33, 1);
+    box-shadow: 0 0 20px #85ff33;
     margin: 0;
 }
 
@@ -103,259 +207,49 @@
 
 /* Assets Column */
 .assets-column {
-    min-width: 200px;
+    min-width: 420px;
 }
 
 .assets-header {
-    width: 100% !important;
-    height: 40px;
+    width: 100%;
+    height: 45px;
     border-bottom: 1px solid #525252;
     background-color: rgba(52, 52, 52, 0.3);
-    border-radius: none;
     margin: 0 0 15px 0;
 }
 
 .assets-header-label {
     height: 30px;
-    margin: 5px;
+    margin: 10px 5px;
     padding: 5px;
-    font-size: 12px !important;
+    font-size: 12px;
     font-family: 'Open Sans', sans-serif;
     color: #c9c9c9;
     font-weight: 200;
-    text-align: left;
 }
 
-.asset-name {
-    width: 50px;
-}
+.asset-name { width: 50px; }
+.asset-price { width: 60px; }
+.asset-purchase-price { width: 60px; }
+.asset-quantity { width: 60px; }
+.asset-profitability { width: 60px; }
 
-.asset-price {
-    width: 50px;
-}
-
-.asset-purchase-price{
-    width: 70px;
-}
-
-.asset-quantity {
-    width: 70px;
-}
-
-.asset-profitability {
-    width: 70px;
-}
-
-.assets-container {
-    max-height: 180px;
-    overflow-y: auto;
-}
-
-.asset-row {
-    padding: 8px 10px;
-    border-radius: 6px;
-    background-color: rgba(0, 0, 0, 0.3);
-    margin: 1px 0;
-}
-
-.asset-row:hover {
-    background-color: rgba(68, 71, 90, 0.6);
-}
-
-.asset-symbol {
-    font-size: 12px;
-    font-weight: bold;
-    color: #f8f8f2;
-}
-
-.row-quantity {
-    font-size: 11px;
-    color: #f8f8f2;
-}
-
-.asset-percentage {
-    font-size: 10px;
-    color: #ffb86c;
-}
-
-.quantity-info {
-    spacing: 2px;
-}
-
-/* Chart Column */
-.chart-column {
-    spacing: 10px;
-    min-width: 120px;
-    align-items: center;
-}
-
-.chart-title {
-    font-size: 12px;
-    font-weight: bold;
-    color: #f8f8f2;
-}
-
-.chart-area {
-    background-color: rgba(68, 71, 90, 0.3);
-    border-radius: 50%;
-    border: 1px solid #44475a;
-}
-
-.chart-legend {
-    spacing: 4px;
-    margin-top: 8px;
-}
-
-.legend-item {
-    spacing: 6px;
-    padding: 2px 0;
-}
-
-.legend-color {
-    width: 10px;
-    height: 10px;
-    border-radius: 2px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.legend-label {
-    font-size: 9px;
-    color: #f8f8f2;
-}
-
-/* Footer */
-.portfolio-footer {
-    padding-top: 10px;
-    border-top: 1px solid #44475a;
-    margin-top: 5px;
-}
-
-.total-value {
-    font-size: 14px;
-    font-weight: bold;
-    color: #e44720;
-}
-
-/* Scrollbar */
-.assets-container::-webkit-scrollbar {
-    width: 4px;
-}
-
-.assets-container::-webkit-scrollbar-track {
-    background: rgba(68, 71, 90, 0.3);
-    border-radius: 2px;
-}
-
-.assets-container::-webkit-scrollbar-thumb {
-    background: #6272a4;
-    border-radius: 2px;
-}
-
-/* Panel Button */
-.portfolio-icon {
-    color: #f8f8f2;
-}
-
-.myextension-button:hover .portfolio-icon {
-    color: #e44720;
-}
-
-/* Вікно пошуку */
-.search-window {
-    background-color: rgba(40, 40, 40, 0.95);
+/* Стилі для полів введення в режимі редагування */
+.edit-entry-field {
+    background-color: rgba(30, 30, 30, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    padding: 0;
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: #f8f8f2;
+    font-size: 11px;
+    width: 60px;
 }
 
-.search-container {
-    spacing: 0;
-    padding: 0;
+.edit-entry-field:focus {
+    border-color: #85ff33;
+    box-shadow: 0 0 5px rgba(85, 180, 33, 0.712);
 }
 
-/* Заголовок вікна пошуку */
-.search-header {
-    background-color: rgba(60, 60, 60, 0.8);
-    border-radius: 12px 12px 0 0;
-    padding: 12px 15px;
-    spacing: 10px;
-}
-
-.search-title {
-    font-weight: bold;
-    font-size: 14px;
-    color: #ffffff;
-}
-
-.close-button {
-    background-color: transparent;
-    border: none;
-    border-radius: 6px;
-    padding: 5px;
-}
-
-.close-button:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.close-button:active {
-    background-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Контент пошуку */
-.search-content {
-    padding: 20px 15px;
-    spacing: 15px;
-}
-
-.entry-container {
-    spacing: 10px;
-}
-
-.search-entry {
-    background-color: rgba(30, 30, 30, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 10px 12px;
-    color: #ffffff;
-    font-size: 13px;
-    selection-background-color: #4a90d9;
-}
-
-.search-entry:focus {
-    border-color: #4a90d9;
-    box-shadow: 0 0 0 1px #4a90d9;
-}
-
-.button-container {
-    spacing: 10px;
-}
-
-.search-action-button {
-    background-color: #4a90d9;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 20px;
-    color: #ffffff;
-    font-weight: bold;
-    font-size: 13px;
-}
-
-.search-action-button:hover {
-    background-color: #5a9fe9;
-}
-
-.search-action-button:active {
-    background-color: #3a80c9;
-}
-
-.search-action-button:insensitive {
-    background-color: rgba(74, 144, 217, 0.5);
-    color: rgba(255, 255, 255, 0.5);
-}
-
-/* Стилі для кнопки видалення */
 /* Стилі для кнопки видалення */
 .delete-button {
     background-color: transparent;
@@ -377,57 +271,137 @@
 
 .delete-icon {
     color: #ff6b6b;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
 }
 
-.quantity-container {
-    spacing: 5px;
-    align-items: center;
+.assets-container {
+    margin: 0;
 }
 
 .asset-row {
-    padding: 8px 5px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    align-items: center;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.3);
+    margin: 0;
+    height: 30px;
 }
 
 .asset-row:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(67, 78, 149, 0.6);
 }
 
 .row-symbol {
-    font-size: 12px;
-    color: #ffffff;
-    width: 50px;
+    width: 70px;
+    margin: auto;
+    padding: auto;
+    font-size: 16px;
+    font-weight: bold;
+    color: #f8f8f2;
 }
 
 .row-price {
-    font-size: 12px;
-    color: #ffffff;
-    width: 50px;
+    width: 80px;
+    margin: auto;
+    padding: auto;
+    font-size: 14px;
+    color: #f8f8f2;
 }
 
 .row-purchase-price {
-    font-size: 12px;
-    color: #ffffff;
-    width: 70px;
-}
-
-.row-quantity {
-    font-size: 12px;
-    color: #ffffff;
-    width: 70px;
+    width: 90px;
+    margin: auto;
+    padding: auto;
+    color: #f8f8f2;
 }
 
 .row-profitability {
-    font-size: 12px;
-    color: #ffffff;
     width: 70px;
+    margin: auto;
+    padding: auto;
 }
 
-/* Стилі для діалогу кількості */
-.quantity-dialog, .edit-dialog {
+.row-quantity {
+    width: 60px;
+    margin: auto;
+    padding: auto;
+    font-size: 11px;
+    color: #f8f8f2;
+}
+
+/* Кольори для доходності */
+.profit-positive {
+    color: #85ff33;
+}
+
+.profit-negative {
+    color: #ff6b6b;
+}
+
+/* Chart Section */
+.chart-container {
+    min-width: 120px;
+}
+
+.chart-area {
+    background-color: rgba(68, 71, 90, 0.3);
+    border-radius: 50%;
+    border: 1px solid #525252;
+}
+
+.chart-legend {
+    margin-top: 8px;
+}
+
+.legend-item {
+    padding: 2px 0;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.legend-label {
+    font-size: 9px;
+    color: #f8f8f2;
+}
+
+/* Statistics */
+.stats-container {
+    margin: 8px;
+}
+
+.total-value {
+    font-size: 14px;
+    font-weight: bold;
+    color: #f8f8f2;
+}
+
+.total-profit {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.total-investment {
+    font-size: 14px;
+    color: #f8f8f2;
+}
+
+/* Panel Button */
+.portfolio-icon {
+    color: #f8f8f2;
+}
+
+.myextension-button:hover .portfolio-icon {
+    color: #85ff33;
+}
+
+/* Діалогові вікна */
+.confirm-dialog,
+.purchase-dialog {
     background-color: rgba(40, 40, 40, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
@@ -435,68 +409,107 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
 }
 
-.quantity-message, .edit-title {
+.confirm-message,
+.purchase-message {
     font-size: 14px;
-    color: #ffffff;
-    margin-bottom: 15px;
-    text-align: center;
-}
-
-.quantity-entry, .edit-entry {
-    background-color: rgba(30, 30, 30, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 8px 12px;
-    color: #ffffff;
+    color: #f8f8f2;
     margin-bottom: 15px;
 }
 
-.quantity-buttons, .edit-buttons {
-    spacing: 10px;
-    justify-content: center;
+.confirm-buttons,
+.purchase-buttons {
+    margin: 10px;
 }
 
-.quantity-add-button, .edit-save-button {
-    background-color: #4a90d9;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    color: #ffffff;
-}
-
-.quantity-cancel-button, .edit-cancel-button {
-    background-color: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    padding: 8px 16px;
-    color: #ffffff;
-}
-
-.edit-delete-button {
+.confirm-yes-button,
+.purchase-add-button {
     background-color: #ff6b6b;
     border: none;
     border-radius: 6px;
     padding: 8px 16px;
-    color: #ffffff;
+    color: #f8f8f2;
 }
 
-/* Стилі для кнопки редагування */
-.edit-button {
+.confirm-yes-button:hover,
+.purchase-add-button:hover {
+    background-color: #ff5252;
+}
+
+.confirm-cancel-button,
+.purchase-cancel-button {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: #f8f8f2;
+}
+
+.confirm-cancel-button:hover,
+.purchase-cancel-button:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Поля введення в діалогах */
+.purchase-field-container {
+    margin: 8px;
+}
+
+.purchase-label {
+    color: #f8f8f2;
+    font-size: 13px;
+    min-width: 120px;
+}
+
+.purchase-entry {
+    background-color: rgba(30, 30, 30, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #f8f8f2;
+    font-size: 13px;
+}
+
+.purchase-entry:focus {
+    border-color: #85ff33;
+    box-shadow: 0 0 5px rgba(85, 180, 33, 0.712);
+}
+
+/* Стилі для автодоповнення */
+.suggestions-window {
+    background-color: rgba(40, 40, 40, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    padding: 5px;
+}
+
+.suggestions-container {
+    margin: 2px;
+}
+
+.suggestion-item {
     background-color: transparent;
     border: none;
-    border-radius: 4px;
-    padding: 4px;
-    margin-left: 5px;
-    min-width: 24px;
-    min-height: 24px;
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: #f8f8f2;
 }
 
-.edit-button:hover {
-    background-color: rgba(74, 144, 217, 0.2);
+.suggestion-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
 }
 
-.edit-icon {
-    color: #4a90d9;
-    width: 16px;
-    height: 16px;
+.suggestion-item:active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.suggestion-symbol {
+    font-weight: bold;
+    color: #85ff33;
+    font-size: 12px;
+}
+
+.suggestion-name {
+    color: #cccccc;
+    font-size: 11px;
 }

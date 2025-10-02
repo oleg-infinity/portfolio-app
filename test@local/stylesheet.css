@@ -24,7 +24,7 @@
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     padding: 15px;
     width: 450px;
-    height: 750px;
+    height: 1150;
 }
 
 .portfolio-container {
@@ -562,9 +562,55 @@
     height: 16px;
 }
 .chart-area {
-    min-width: 250px;
+    min-width: 350px;
     min-height: 200px;
     background-color: rgba(245, 245, 245, 0.3);
     border: 1px solid rgba(200, 200, 200, 0.5);
     border-radius: 8px;
+    margin: 5px;
+}
+
+/* Стилі для перемикачів часу */
+.time-range-container {
+    spacing: 5px;
+    margin-bottom: 10px;
+}
+
+.time-range-button {
+    padding: 4px 8px;
+    border-radius: 4px;
+    background-color: rgba(200, 200, 200, 0.3);
+    border: 1px solid rgba(150, 150, 150, 0.5);
+    font-size: 11px;
+}
+
+.time-range-button:hover {
+    background-color: rgba(200, 200, 200, 0.5);
+}
+
+.time-range-button:active {
+    background-color: rgba(100, 150, 255, 0.3);
+    border-color: rgba(80, 120, 200, 0.8);
+}
+
+/* Стилі для діалогу вибору дат */
+.custom-date-dialog {
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 2px solid rgba(100, 100, 100, 0.8);
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.date-field-container {
+    spacing: 8px;
+    margin: 5px 0;
+}
+
+.date-label {
+    font-weight: bold;
+    min-width: 30px;
+}
+
+.date-entry {
+    width: 120px;
 }

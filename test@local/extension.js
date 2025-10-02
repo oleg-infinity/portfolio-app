@@ -22,9 +22,18 @@ export default class MyExtension {
         this._priceUpdateInterval = null;
         this._isChartView = true;
         this._chartToggleButton = null;
-        this._priceHistory = []; // Зберігаємо історію цін
-        this._maxHistoryPoints = 30; // Ліміт точок для продуктивності
+        this._priceHistory = [];
+        this._maxHistoryPoints = 500; // Збільшено для довшого періоду
+        this._chartScrollOffset = 0;
+        this._chartVisiblePoints = 20; // Збільшено видимих точок
+        this._isDraggingChart = false;
+        this._dragStartX = 0;
+        this._timeRange = '1m'; // 1 день, 1 тиждень, 1 місяць, 1 рік, custom
+        this._timeRangeButtons = null;
+        this._customStartDate = null;
+        this._customEndDate = null;
     }
+
 
     enable() {
         try {
@@ -51,7 +60,7 @@ export default class MyExtension {
                 5 * 60 * 1000,
                 () => {
                     this._updateAssetPrices();
-                    return true; // Продовжити інтервал
+                    return true;
                 }
             );
             
@@ -77,14 +86,11 @@ export default class MyExtension {
             
             if (!GLib.file_test(dataDir, GLib.FileTest.EXISTS)) {
                 GLib.mkdir_with_parents(dataDir, 0o755);
-                log(`Створено директорію для даних: ${dataDir}`);
             }
             
             this._dataFile = `${dataDir}/portfolio.json`;
-            log(`Файл даних: ${this._dataFile}`);
             
         } catch (e) {
-            log(`Помилка ініціалізації сховища: ${e}`);
             const homeDir = GLib.get_home_dir();
             this._dataFile = `${homeDir}/.test-portfolio.json`;
         }
@@ -96,14 +102,11 @@ export default class MyExtension {
                 const [success, contents] = GLib.file_get_contents(this._dataFile);
                 
                 if (!success) {
-                    log("Не вдалося прочитати файл даних");
                     this._assetsData = [];
                     return;
                 }
                 
-                // Перевірка 1: чи є взагалі дані для декодування
                 if (!contents || contents.length === 0) {
-                    log("Файл даних порожній");
                     this._assetsData = [];
                     return;
                 }
@@ -111,33 +114,26 @@ export default class MyExtension {
                 const decoder = new TextDecoder('utf-8');
                 const jsonString = decoder.decode(contents);
                 
-                // Перевірка 2: чи не порожній рядок після декодування
                 if (!jsonString || jsonString.trim().length === 0) {
-                    log("Файл містить лише пробіли");
                     this._assetsData = [];
                     return;
                 }
                 
-                // Перевірка 3: спроба парсингу JSON
                 let data;
                 try {
                     data = JSON.parse(jsonString);
                 } catch (parseError) {
-                    log(`Помилка парсингу JSON: ${parseError}`);
                     this._assetsData = [];
                     return;
                 }
                 
-                // Перевірка 4: чи є потрібна структура даних
                 if (!data || typeof data !== 'object') {
-                    log("Некоректна структура даних у файлі");
                     this._assetsData = [];
                     return;
                 }
                 
                 this._assetsData = data.assets || [];
                 
-                // Ініціалізація полів за замовчуванням
                 this._assetsData.forEach(asset => {
                     if (asset.purchasePrice === undefined) {
                         asset.purchasePrice = asset.price || 0;
@@ -145,20 +141,19 @@ export default class MyExtension {
                     if (!asset.purchaseDate) {
                         asset.purchaseDate = new Date().toISOString().split('T')[0];
                     }
+                    if (!asset.color) {
+                        asset.color = this._getRandomColor();
+                    }
                 });
                 
-                log(`Завантажено ${this._assetsData.length} активів`);
             } else {
                 this._assetsData = [];
                 this._saveAssetsData();
             }
         } catch (e) {
-            log(`Помилка завантаження даних: ${e}`);
             this._assetsData = [];
         }
     }
-
-
 
     _saveAssetsData() {
         try {
@@ -224,12 +219,10 @@ export default class MyExtension {
                             resolve(null);
                         }
                     } catch (e) {
-                        log(`Помилка при парсингу: ${e}`);
                         resolve(null);
                     }
                 });
             } catch (e) {
-                log(`Помилка запиту до Yahoo Finance: ${e}`);
                 resolve(null);
             }
         });
@@ -771,16 +764,115 @@ export default class MyExtension {
         });
         chartContainer.add_child(this._chartTitle);
 
+        if (!this._isChartView) {
+            const timeRangeContainer = new St.BoxLayout({
+                style_class: 'time-range-container'
+            });
+            
+            const timeRanges = [
+                { id: '1d', label: '1Д' },
+                { id: '1w', label: '1Т' },
+                { id: '1m', label: '1М' },
+                { id: '1y', label: '1Р' },
+                { id: 'custom', label: 'Свій' }
+            ];
+            
+            this._timeRangeButtons = [];
+            
+            timeRanges.forEach(range => {
+                const button = new St.Button({
+                    label: range.label,
+                    style_class: 'time-range-button'
+                });
+                
+                if (range.id === this._timeRange) {
+                    button.add_style_pseudo_class('active');
+                }
+                
+                button.connect('clicked', () => {
+                    this._setTimeRange(range.id);
+                });
+                
+                timeRangeContainer.add_child(button);
+                this._timeRangeButtons.push(button);
+            });
+            
+            chartContainer.add_child(timeRangeContainer);
+        }
+
         this._chartArea = new St.DrawingArea({
             style_class: 'chart-area',
-            width: 200,  // Додайте фіксовану ширину
-            height: 200
+            width: 350,
+            height: 250,
+            reactive: true,
+            can_focus: true,
+            track_hover: true
         });
         
         this._chartArea.connect('repaint', (area) => {
             this._drawChart(area);
         });
 
+        // Додаємо обробники для гортання
+        this._chartArea.connect('button-press-event', (actor, event) => {
+            if (!this._isChartView) {
+                this._isDraggingChart = true;
+                this._dragStartX = event.get_x();
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
+        });
+
+        this._chartArea.connect('button-release-event', (actor, event) => {
+            if (!this._isChartView) {
+                this._isDraggingChart = false;
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
+        });
+
+        this._chartArea.connect('motion-event', (actor, event) => {
+            if (!this._isChartView && this._isDraggingChart) {
+                const currentX = event.get_x();
+                const deltaX = currentX - this._dragStartX;
+                
+                if (Math.abs(deltaX) > 3) {
+                    const scrollSensitivity = 2.0;
+                    const scrollDelta = Math.sign(deltaX) * scrollSensitivity;
+                    
+                    this._chartScrollOffset = Math.max(0, 
+                        Math.min(this._chartScrollOffset + scrollDelta, 
+                                this._priceHistory.length - this._chartVisiblePoints)
+                    );
+                    
+                    this._chartArea.queue_repaint();
+                    this._dragStartX = currentX;
+                }
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
+        });
+
+        this._chartArea.connect('scroll-event', (actor, event) => {
+            if (!this._isChartView) {
+                const direction = event.get_scroll_direction();
+                
+                if (direction === Clutter.ScrollDirection.UP || direction === Clutter.ScrollDirection.LEFT) {
+                    this._chartScrollOffset = Math.max(0, this._chartScrollOffset - 5);
+                } else if (direction === Clutter.ScrollDirection.DOWN || direction === Clutter.ScrollDirection.RIGHT) {
+                    this._chartScrollOffset = Math.min(
+                        this._priceHistory.length - this._chartVisiblePoints,
+                        this._chartScrollOffset + 5
+                    );
+                }
+                
+                this._chartArea.queue_repaint();
+                return Clutter.EVENT_STOP;
+            }
+            return Clutter.EVENT_PROPAGATE;
+        });
+
+        // === ВИПРАВЛЕННЯ: Ініціалізуємо _chartLegend перед використанням ===
         this._chartLegend = new St.BoxLayout({
             vertical: true,
             style_class: 'chart-legend'
@@ -814,6 +906,66 @@ export default class MyExtension {
         this._updateChartView();
     }
 
+     _getFilteredHistory() {
+        if (this._timeRange === 'all' || this._priceHistory.length === 0) {
+            return this._priceHistory;
+        }
+
+        const now = Date.now();
+        let timeAgo;
+
+        switch (this._timeRange) {
+            case '1d':
+                timeAgo = now - (24 * 60 * 60 * 1000); // 1 день
+                break;
+            case '1w':
+                timeAgo = now - (7 * 24 * 60 * 60 * 1000); // 1 тиждень
+                break;
+            case '1m':
+                timeAgo = now - (30 * 24 * 60 * 60 * 1000); // 1 місяць
+                break;
+            case '1y':
+                timeAgo = now - (365 * 24 * 60 * 60 * 1000); // 1 рік
+                break;
+            case 'custom':
+                // Тут можна додати логіку для кастомного діапазону
+                return this._priceHistory;
+            default:
+                return this._priceHistory;
+        }
+
+        return this._priceHistory.filter(point => point.timestamp >= timeAgo);
+    }
+
+    _setTimeRange(range) {
+        this._timeRange = range;
+        
+        // Оновлюємо активні кнопки
+        if (this._timeRangeButtons) {
+            this._timeRangeButtons.forEach(button => {
+                button.remove_style_pseudo_class('active');
+            });
+            
+            const activeIndex = ['1d', '1w', '1m', '1y', 'custom'].indexOf(range);
+            if (activeIndex >= 0 && this._timeRangeButtons[activeIndex]) {
+                this._timeRangeButtons[activeIndex].add_style_pseudo_class('active');
+            }
+        }
+        
+        // Скидаємо прокрутку
+        this._chartScrollOffset = 0;
+        
+        // Оновлюємо графік
+        if (this._chartArea) {
+            this._chartArea.queue_repaint();
+        }
+        
+        // Якщо обрано кастомний діапазон, показуємо діалог вибору дат
+        if (range === 'custom') {
+            this._showCustomDateDialog();
+        }
+    }
+
     _repositionWindow() {
         if (!this._window || !this._button) return;
         
@@ -841,6 +993,103 @@ export default class MyExtension {
             this._window.set_size(450, 600);
             this._window.set_position(100, 100);
         }
+    }
+
+    _showCustomDateDialog() {
+        const dialog = new St.Widget({
+            style_class: 'custom-date-dialog',
+            reactive: true,
+            can_focus: true
+        });
+
+        const container = new St.BoxLayout({
+            vertical: true,
+            style_class: 'custom-date-container'
+        });
+
+        const message = new St.Label({
+            text: 'Виберіть діапазон дат',
+            style_class: 'custom-date-message'
+        });
+
+        const startDateContainer = new St.BoxLayout({
+            style_class: 'date-field-container'
+        });
+        startDateContainer.add_child(new St.Label({
+            text: 'З:',
+            style_class: 'date-label'
+        }));
+        const startDateEntry = new St.Entry({
+            text: this._customStartDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            style_class: 'date-entry'
+        });
+        startDateContainer.add_child(startDateEntry);
+
+        const endDateContainer = new St.BoxLayout({
+            style_class: 'date-field-container'
+        });
+        endDateContainer.add_child(new St.Label({
+            text: 'По:',
+            style_class: 'date-label'
+        }));
+        const endDateEntry = new St.Entry({
+            text: this._customEndDate || new Date().toISOString().split('T')[0],
+            style_class: 'date-entry'
+        });
+        endDateContainer.add_child(endDateEntry);
+
+        const buttonContainer = new St.BoxLayout({
+            style_class: 'date-buttons'
+        });
+
+        const applyButton = new St.Button({
+            label: 'Застосувати',
+            style_class: 'date-apply-button'
+        });
+
+        const cancelButton = new St.Button({
+            label: 'Скасувати',
+            style_class: 'date-cancel-button'
+        });
+
+        applyButton.connect('clicked', () => {
+            this._customStartDate = startDateEntry.text;
+            this._customEndDate = endDateEntry.text;
+            
+            // Перевіряємо коректність дат
+            const startDate = new Date(this._customStartDate);
+            const endDate = new Date(this._customEndDate);
+            
+            if (startDate <= endDate) {
+                Main.layoutManager.removeChrome(dialog);
+                this._chartArea.queue_repaint();
+            } else {
+                Main.notify('Некоректний діапазон дат');
+            }
+        });
+
+        cancelButton.connect('clicked', () => {
+            Main.layoutManager.removeChrome(dialog);
+        });
+
+        buttonContainer.add_child(applyButton);
+        buttonContainer.add_child(cancelButton);
+
+        container.add_child(message);
+        container.add_child(startDateContainer);
+        container.add_child(endDateContainer);
+        container.add_child(buttonContainer);
+        dialog.add_child(container);
+
+        const monitor = Main.layoutManager.primaryMonitor;
+        dialog.set_position(
+            Math.floor((monitor.width - 300) / 2),
+            Math.floor((monitor.height - 200) / 2)
+        );
+
+        Main.layoutManager.addChrome(dialog);
+        dialog.show();
+        startDateEntry.grab_key_focus();
     }
 
     _askForPurchaseDetails(asset) {
@@ -1196,8 +1445,7 @@ export default class MyExtension {
             }
 
             // Оновлюємо графік (МІНІМАЛЬНИЙ ВПЛИВ)
-            if (this._chartArea) {
-                this._chartArea.width = this._chartArea.width; // Примусове оновлення розміру
+            if (this._chartArea && this._chartArea.width > 0 && this._chartArea.height > 0) {
                 this._chartArea.queue_repaint();
             }
         } catch (e) {
@@ -1273,9 +1521,9 @@ export default class MyExtension {
     _toggleChartView() {
         this._isChartView = !this._isChartView;
         
-        // Оновлюємо історію при перемиканні на графік тренду
         if (!this._isChartView) {
             this._updatePriceHistory();
+            this._chartScrollOffset = Math.max(0, this._getFilteredHistory().length - this._chartVisiblePoints);
         }
         
         this._updateChartView();
@@ -1287,7 +1535,7 @@ export default class MyExtension {
                 this._chartToggleButton.get_child().icon_name = 'view-pie-symbolic';
                 this._chartTitle.set_text('Розподіл портфеля:');
             } else {
-                this._chartToggleButton.get_child().icon_name = 'view-line-symbolic'; // Змінити іконку
+                this._chartToggleButton.get_child().icon_name = 'view-line-symbolic';
                 this._chartTitle.set_text('Тренд портфеля:');
             }
         }
@@ -1353,8 +1601,7 @@ export default class MyExtension {
         return totalInvestment > 0 ? ((totalValue - totalInvestment) / totalInvestment) * 100 : 0;
     }
 
-    // Оновіть метод для малювання графіка тренду
-    _drawTrendChart(area) {
+    _drawAdvancedLineChart(area) {
         if (this._isChartView || !this._priceHistory || this._priceHistory.length < 2) {
             return;
         }
@@ -1362,8 +1609,8 @@ export default class MyExtension {
         try {
             if (!area) return;
             
-            const width = area.width || 200;
-            const height = area.height || 200;
+            const width = area.width || 350;
+            const height = area.height || 250;
             
             if (width <= 10 || height <= 10) return;
             
@@ -1371,106 +1618,217 @@ export default class MyExtension {
             if (!cr) return;
             
             // Очищення фону
-            cr.setSourceRGBA(0.95, 0.95, 0.95, 0.1); // Світло-сірий фон
+            cr.setSourceRGBA(1, 1, 1, 1);
             cr.paint();
             
-            // Знаходимо мінімальні та максимальні значення для масштабування
+            // Використовуємо відфільтровану історію
+            const filteredHistory = this._getFilteredHistory();
+            
+            if (filteredHistory.length < 2) {
+                // Малюємо повідомлення про відсутність даних
+                cr.setSourceRGBA(0.5, 0.5, 0.5, 1);
+                cr.moveTo(width / 2 - 50, height / 2);
+                cr.showText('Недостатньо даних');
+                return;
+            }
+            
+            // Обчислюємо видимий діапазон
+            const totalPoints = filteredHistory.length;
+            const maxOffset = Math.max(0, totalPoints - this._chartVisiblePoints);
+            this._chartScrollOffset = Math.min(this._chartScrollOffset, maxOffset);
+            this._chartScrollOffset = Math.max(0, this._chartScrollOffset);
+            
+            const startIndex = this._chartScrollOffset;
+            const endIndex = Math.min(startIndex + this._chartVisiblePoints, totalPoints);
+            const visiblePoints = filteredHistory.slice(startIndex, endIndex);
+            
+            if (visiblePoints.length < 2) return;
+            
+            // Знаходимо мінімальні та максимальні значення
             let minValue = Infinity;
             let maxValue = -Infinity;
+            let minProfit = Infinity;
+            let maxProfit = -Infinity;
             
-            for (let i = 0; i < this._priceHistory.length; i++) {
-                const point = this._priceHistory[i];
+            for (let i = 0; i < visiblePoints.length; i++) {
+                const point = visiblePoints[i];
                 minValue = Math.min(minValue, point.value);
                 maxValue = Math.max(maxValue, point.value);
+                minProfit = Math.min(minProfit, point.profitability);
+                maxProfit = Math.max(maxProfit, point.profitability);
             }
             
-            // Додаємо 10% відступу для кращого відображення
+            // Додаємо відступи
             const valueRange = maxValue - minValue;
-            const padding = valueRange * 0.1;
-            minValue -= padding;
-            maxValue += padding;
+            const profitRange = maxProfit - minProfit;
+            const valuePadding = valueRange * 0.1;
+            const profitPadding = profitRange * 0.1;
             
-            const adjustedValueRange = maxValue - minValue || 1;
+            minValue -= valuePadding || 1;
+            maxValue += valuePadding || 1;
+            minProfit -= profitPadding || 1;
+            maxProfit += profitPadding || 1;
             
-            const chartPadding = 15;
-            const chartWidth = width - chartPadding * 2;
-            const chartHeight = height - chartPadding * 2;
+            const adjustedValueRange = Math.max(maxValue - minValue, 1);
+            const adjustedProfitRange = Math.max(maxProfit - minProfit, 1);
+            
+            const padding = { top: 40, right: 30, bottom: 50, left: 60 }; // Збільшено padding
+            const chartWidth = width - padding.left - padding.right;
+            const chartHeight = height - padding.top - padding.bottom;
+            
+            // Функція для округлення координат
+            const roundCoord = (num) => Math.round(num) + 0.5;
             
             // Малюємо сітку
-            cr.setSourceRGBA(0.7, 0.7, 0.7, 0.3);
-            cr.setLineWidth(0.5);
+            cr.setSourceRGBA(0.9, 0.9, 0.9, 1);
+            cr.setLineWidth(1);
             
-            // Горизонтальні лінії
-            for (let i = 0; i <= 4; i++) {
-                const y = chartPadding + (i / 4) * chartHeight;
-                cr.moveTo(chartPadding, y);
-                cr.lineTo(chartPadding + chartWidth, y);
+            // Вертикальні лінії сітки
+            for (let i = 0; i <= 5; i++) {
+                const x = roundCoord(padding.left + (i / 5) * chartWidth);
+                cr.moveTo(x, padding.top);
+                cr.lineTo(x, padding.top + chartHeight);
                 cr.stroke();
             }
             
-            // Вертикальні лінії
-            for (let i = 0; i <= 4; i++) {
-                const x = chartPadding + (i / 4) * chartWidth;
-                cr.moveTo(x, chartPadding);
-                cr.lineTo(x, chartPadding + chartHeight);
+            // Горизонтальні лінії сітки
+            for (let i = 0; i <= 5; i++) {
+                const y = roundCoord(padding.top + (i / 5) * chartHeight);
+                cr.moveTo(padding.left, y);
+                cr.lineTo(padding.left + chartWidth, y);
                 cr.stroke();
             }
             
-            // Малюємо лінію вартості (основну)
-            cr.setSourceRGBA(0.2, 0.6, 0.2, 0.8);
-            cr.setLineWidth(2.5);
+            // ВИПРАВЛЕННЯ: Зелена лінія вартості - товща та яскрава
+            cr.setSourceRGBA(0.0, 0.7, 0.0, 1); // Яскраво-зелений
+            cr.setLineWidth(3); // Товща лінія
+            cr.setLineCap(2); // ROUND line cap
             
-            cr.moveTo(
-                chartPadding,
-                chartPadding + chartHeight - ((this._priceHistory[0].value - minValue) / adjustedValueRange) * chartHeight
-            );
+            const firstValuePoint = visiblePoints[0];
+            let firstX = roundCoord(padding.left);
+            let firstY = roundCoord(padding.top + chartHeight - ((firstValuePoint.value - minValue) / adjustedValueRange) * chartHeight);
+            cr.moveTo(firstX, firstY);
             
-            for (let i = 1; i < this._priceHistory.length; i++) {
-                const point = this._priceHistory[i];
-                const x = chartPadding + (i / (this._priceHistory.length - 1)) * chartWidth;
-                const y = chartPadding + chartHeight - ((point.value - minValue) / adjustedValueRange) * chartHeight;
-                
+            for (let i = 1; i < visiblePoints.length; i++) {
+                const point = visiblePoints[i];
+                const x = roundCoord(padding.left + (i / (visiblePoints.length - 1)) * chartWidth);
+                const y = roundCoord(padding.top + chartHeight - ((point.value - minValue) / adjustedValueRange) * chartHeight);
                 cr.lineTo(x, y);
             }
             cr.stroke();
             
-            // Малюємо точки на графіку
-            cr.setSourceRGBA(0.2, 0.6, 0.2, 1);
-            for (let i = 0; i < this._priceHistory.length; i++) {
-                const point = this._priceHistory[i];
-                const x = chartPadding + (i / (this._priceHistory.length - 1)) * chartWidth;
-                const y = chartPadding + chartHeight - ((point.value - minValue) / adjustedValueRange) * chartHeight;
+            // Синьо-блакитна лінія доходності
+            cr.setSourceRGBA(0.2, 0.4, 1.0, 1); // Яскраво-синій
+            cr.setLineWidth(2.5);
+            cr.setLineCap(2);
+            
+            const firstProfitPoint = visiblePoints[0];
+            firstX = roundCoord(padding.left);
+            firstY = roundCoord(padding.top + chartHeight - ((firstProfitPoint.profitability - minProfit) / adjustedProfitRange) * chartHeight);
+            cr.moveTo(firstX, firstY);
+            
+            for (let i = 1; i < visiblePoints.length; i++) {
+                const point = visiblePoints[i];
+                const x = roundCoord(padding.left + (i / (visiblePoints.length - 1)) * chartWidth);
+                const y = roundCoord(padding.top + chartHeight - ((point.profitability - minProfit) / adjustedProfitRange) * chartHeight);
+                cr.lineTo(x, y);
+            }
+            cr.stroke();
+            
+            // Точки для вартості (зелені)
+            cr.setSourceRGBA(0.0, 0.7, 0.0, 1);
+            for (let i = 0; i < visiblePoints.length; i++) {
+                const point = visiblePoints[i];
+                const x = roundCoord(padding.left + (i / (visiblePoints.length - 1)) * chartWidth);
+                const y = roundCoord(padding.top + chartHeight - ((point.value - minValue) / adjustedValueRange) * chartHeight);
                 
-                cr.arc(x, y, 2, 0, 2 * Math.PI);
+                cr.arc(x, y, 4, 0, 2 * Math.PI); // Більші точки
                 cr.fill();
             }
             
-            // Додаємо підписи осей (опційно)
-            cr.setSourceRGBA(0.3, 0.3, 0.3, 0.8);
+            // Точки для доходності (сині)
+            cr.setSourceRGBA(0.2, 0.4, 1.0, 1);
+            for (let i = 0; i < visiblePoints.length; i++) {
+                const point = visiblePoints[i];
+                const x = roundCoord(padding.left + (i / (visiblePoints.length - 1)) * chartWidth);
+                const y = roundCoord(padding.top + chartHeight - ((point.profitability - minProfit) / adjustedProfitRange) * chartHeight);
+                
+                cr.arc(x, y, 3, 0, 2 * Math.PI);
+                cr.fill();
+            }
+            
+            // Підписи осей
+            cr.setSourceRGBA(0.2, 0.2, 0.2, 1);
             cr.setFontSize(10);
             
-            // Мінімальне значення
-            cr.moveTo(chartPadding - 5, chartPadding + chartHeight + 2);
-            cr.showText(`$${minValue.toFixed(0)}`);
+            // Ліва вісь (вартість)
+            for (let i = 0; i <= 5; i++) {
+                const value = minValue + (i / 5) * (maxValue - minValue);
+                const y = padding.top + chartHeight - (i / 5) * chartHeight;
+                cr.moveTo(padding.left - 55, y + 4);
+                cr.showText(`$${value.toFixed(0)}`);
+            }
             
-            // Максимальне значення
-            cr.moveTo(chartPadding - 5, chartPadding - 2);
-            cr.showText(`$${maxValue.toFixed(0)}`);
+            // Права вісь (доходність)
+            for (let i = 0; i <= 5; i++) {
+                const value = minProfit + (i / 5) * (maxProfit - minProfit);
+                const y = padding.top + chartHeight - (i / 5) * chartHeight;
+                cr.moveTo(padding.left + chartWidth + 10, y + 4);
+                cr.showText(`${value.toFixed(1)}%`);
+            }
+            
+            // Часова вісь
+            if (visiblePoints.length >= 2) {
+                const firstDate = new Date(visiblePoints[0].timestamp);
+                const lastDate = new Date(visiblePoints[visiblePoints.length - 1].timestamp);
+                
+                cr.moveTo(padding.left - 15, padding.top + chartHeight + 25);
+                cr.showText(this._formatDateTime(firstDate));
+                
+                cr.moveTo(padding.left + chartWidth - 50, padding.top + chartHeight + 25);
+                cr.showText(this._formatDateTime(lastDate));
+            }
+            
+            // Легенда
+            cr.setSourceRGBA(0.0, 0.7, 0.0, 1);
+            cr.rectangle(padding.left, 15, 20, 4);
+            cr.fill();
+            cr.moveTo(padding.left + 25, 18);
+            cr.showText('Загальна вартість');
+            
+            cr.setSourceRGBA(0.2, 0.4, 1.0, 1);
+            cr.rectangle(padding.left + 150, 15, 20, 4);
+            cr.fill();
+            cr.moveTo(padding.left + 175, 18);
+            cr.showText('Доходність');
+            
+            // Індикатор прокрутки (тільки якщо є що прокручувати)
+            if (totalPoints > this._chartVisiblePoints) {
+                this._drawScrollIndicator(cr, width, height, startIndex, totalPoints);
+            }
+            
+            // Інформація про видимий діапазон
+            cr.setSourceRGBA(0.5, 0.5, 0.5, 0.8);
+            cr.moveTo(padding.left, padding.top - 10);
+            cr.showText(`Точки ${startIndex + 1}-${endIndex} з ${totalPoints}`);
             
         } catch (e) {
-            log(`Помилка малювання графіка тренду: ${e}`);
+            log(`Помилка малювання графіка: ${e}`);
         }
     }
 
-    _drawChart(area) {
-        if (this._isChartView) {
-            this._drawPieChart(area); // Кругова діаграма
+    _formatDateTime(date) {
+        const now = new Date();
+        const isToday = date.toDateString() === now.toDateString();
+        
+        if (isToday) {
+            return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
         } else {
-            this._drawTrendChart(area); // Графік тренду
+            return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
         }
     }
 
-    _drawPieChart(area) {
+    _drawDonutChart(area) {
         if (!this._isChartView || !this._assetsData || this._assetsData.length === 0) {
             return;
         }
@@ -1478,7 +1836,7 @@ export default class MyExtension {
         try {
             if (!area) return;
             
-            const width = area.width || 200;
+            const width = area.width || 250;
             const height = area.height || 200;
             
             if (width <= 10 || height <= 10) return;
@@ -1486,17 +1844,17 @@ export default class MyExtension {
             const cr = area.get_context();
             if (!cr) return;
             
-            // Просте очищення
-            cr.setSourceRGBA(0, 0, 0, 0);
+            // ВИПРАВЛЕННЯ: Суцільний білий фон
+            cr.setSourceRGBA(1, 1, 1, 1);
             cr.paint();
             
-            const radius = Math.min(width, height) / 2 - 5; // Менше обчислень
-            const centerX = width / 2;
-            const centerY = height / 2;
+            const centerX = Math.round(width / 2);
+            const centerY = Math.round(height / 2);
+            const outerRadius = Math.min(width, height) / 2 - 20;
+            const innerRadius = outerRadius * 0.6;
             
-            if (radius <= 5) return;
+            if (outerRadius <= 10) return;
             
-            // Швидкий розрахунок загальної вартості
             let totalValue = 0;
             for (let i = 0; i < this._assetsData.length; i++) {
                 const asset = this._assetsData[i];
@@ -1505,8 +1863,20 @@ export default class MyExtension {
             
             if (totalValue <= 0) return;
             
-            // Спрощене малювання
-            let currentAngle = 0;
+            let currentAngle = -Math.PI / 2;
+            
+            // ВИПРАВЛЕННЯ: Більш насичені кольори
+            const colorPalette = [
+                [0.8, 0.2, 0.2],   // Яскраво-червоний
+                [0.2, 0.6, 0.2],   // Яскраво-зелений
+                [0.2, 0.4, 0.8],   // Яскраво-синій
+                [0.8, 0.6, 0.2],   // Золотистий
+                [0.6, 0.2, 0.8],   // Фіолетовий
+                [0.2, 0.8, 0.8],   // Бірюзовий
+                [0.8, 0.4, 0.6],   // Рожевий
+                [0.4, 0.4, 0.4]    // Сірий
+            ];
+            
             for (let i = 0; i < this._assetsData.length; i++) {
                 const asset = this._assetsData[i];
                 const assetValue = (asset.price || 0) * (asset.quantity || 1);
@@ -1514,32 +1884,80 @@ export default class MyExtension {
                 
                 if (angle <= 0.001) continue;
                 
-                cr.arc(centerX, centerY, radius, currentAngle, currentAngle + angle);
-                cr.lineTo(centerX, centerY);
+                const colorIndex = i % colorPalette.length;
+                const [r, g, b] = colorPalette[colorIndex];
+                
+                // ВИПРАВЛЕННЯ: Чіткіші сегменти
+                cr.arc(centerX, centerY, outerRadius, currentAngle, currentAngle + angle);
+                cr.arcNegative(centerX, centerY, innerRadius, currentAngle + angle, currentAngle);
                 cr.closePath();
                 
-                // Прості кольори без складних перетворень
-                const color = asset.color || this._getRandomColor();
-                let r, g, b;
+                // ВИПРАВЛЕННЯ: Повна непрозорість
+                cr.setSourceRGBA(r, g, b, 1);
+                cr.fillPreserve();
                 
-                if (color && color.startsWith('#') && color.length === 7) {
-                    r = parseInt(color.substr(1, 2), 16) / 255;
-                    g = parseInt(color.substr(3, 2), 16) / 255;
-                    b = parseInt(color.substr(5, 2), 16) / 255;
-                } else {
-                    // Швидкий запасний колір
-                    r = 0.4; g = 0.7; b = 0.4;
-                }
-                
-                cr.setSourceRGBA(r, g, b, 0.8);
-                cr.fill();
+                // ВИПРАВЛЕННЯ: Темніша обводка
+                cr.setSourceRGBA(r * 0.6, g * 0.6, b * 0.6, 1);
+                cr.setLineWidth(1.5);
+                cr.stroke();
                 
                 currentAngle += angle;
             }
             
+            // ВИПРАВЛЕННЯ: Чіткіший текст
+            cr.setSourceRGBA(0, 0, 0, 1);
+            cr.setFontSize(12);
+            cr.moveTo(centerX - 20, centerY - 5);
+            cr.showText('Загалом');
+            cr.moveTo(centerX - 25, centerY + 10);
+            cr.showText(`$${totalValue.toFixed(0)}`);
+            
         } catch (e) {
-            // Мовчки ігноруємо помилки
+            // Ігноруємо помилки
         }
+    }
+
+    _drawScrollIndicator(cr, width, height, startIndex, totalPoints) {
+        const indicatorHeight = 8;
+        const indicatorWidth = 150;
+        const indicatorX = (width - indicatorWidth) / 2;
+        const indicatorY = height - 20;
+        
+        // Фон індикатора
+        cr.setSourceRGBA(0.7, 0.7, 0.7, 0.5);
+        cr.rectangle(indicatorX, indicatorY, indicatorWidth, indicatorHeight);
+        cr.fill();
+        
+        // Поточне положення
+        const visibleRatio = this._chartVisiblePoints / totalPoints;
+        const scrollRatio = startIndex / (totalPoints - this._chartVisiblePoints);
+        const thumbWidth = Math.max(indicatorWidth * visibleRatio, 10);
+        const thumbX = indicatorX + scrollRatio * (indicatorWidth - thumbWidth);
+        
+        cr.setSourceRGBA(0.2, 0.6, 0.2, 0.8);
+        cr.rectangle(thumbX, indicatorY, thumbWidth, indicatorHeight);
+        cr.fill();
+    }
+
+    _formatTime(date) {
+        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+    }
+
+    _formatDate(date) {
+        return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
+    }
+
+    // Оновлюємо метод _drawChart
+    _drawChart(area) {
+        if (this._isChartView) {
+            this._drawDonutChart(area); // Doughnut діаграма
+        } else {
+            this._drawAdvancedLineChart(area); // Покращений графік тренду
+        }
+    }
+
+    _roundCoord(num) {
+        return Math.round(num) + 0.5;
     }
 
     disable() {
@@ -1566,7 +1984,6 @@ export default class MyExtension {
             this._isWindowVisible = false;
             this._isSearchVisible = false;
             
-            log('Portfolio extension disabled successfully');
         } catch (e) {
             log(`Error disabling extension: ${e}`);
         }

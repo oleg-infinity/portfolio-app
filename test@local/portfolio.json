@@ -1,36 +1,76 @@
 {
   "version": "1.1",
-  "lastUpdate": "2025-10-02T09:59:33.562Z",
+  "lastUpdate": "2025-10-02T20:57:55.831Z",
   "assets": [
     {
       "symbol": "SNAP",
-      "price": 7.71,
+      "price": 8.22,
       "name": "Snap Inc.",
       "quantity": 10,
       "color": "#FFA07A",
-      "purchasePrice": 7,
-      "currentPrice": 7.71,
-      "purchaseDate": "2025-8-01"
+      "purchasePrice": 7.05,
+      "currentPrice": 8.22,
+      "purchaseDate": "2025-08-01"
     },
     {
       "symbol": "AIQ",
-      "price": 49.89,
+      "price": 50.32,
       "name": "Global X Artificial Intelligenc",
       "quantity": 1,
       "color": "#73fc03ff",
-      "purchasePrice": 48,
-      "currentPrice": 49.89,
-      "purchaseDate": "2025-3-01"
+      "purchasePrice": 40,
+      "currentPrice": 50.32,
+      "purchaseDate": "2025-03-01"
     },
     {
       "symbol": "AAPL",
-      "price": 255.45,
-      "currentPrice": 255.45,
-      "purchasePrice": 255.23625,
+      "price": 257.13,
+      "currentPrice": 257.13,
+      "purchasePrice": 209.24,
       "quantity": 8,
       "name": "Apple Inc.",
       "color": "#FFE66D",
-      "purchaseDate": "2025-5-23"
+      "purchaseDate": "2025-05-23"
+    },
+    {
+      "symbol": "ETHA",
+      "price": 34.05,
+      "currentPrice": 34.05,
+      "purchasePrice": 30.8,
+      "quantity": 1,
+      "purchaseDate": "2025-01-02",
+      "name": "iShares Ethereum Trust - iShare",
+      "color": "#54a0ff"
+    },
+    {
+      "symbol": "B",
+      "price": 33.92,
+      "currentPrice": 33.92,
+      "purchasePrice": 25.71,
+      "quantity": 5,
+      "purchaseDate": "2025-10-02",
+      "name": "Barrick Mining Corporation",
+      "color": "#5f27cd"
+    },
+    {
+      "symbol": "A",
+      "price": 138.7,
+      "currentPrice": 138.7,
+      "purchasePrice": 138.58,
+      "quantity": 1,
+      "purchaseDate": "2024-02-02",
+      "name": "Agilent Technologies, Inc.",
+      "color": "#ff6b6b"
+    },
+    {
+      "symbol": "BTG",
+      "price": 5.03,
+      "currentPrice": 5.03,
+      "purchasePrice": 3,
+      "quantity": 10,
+      "purchaseDate": "2024-08-02",
+      "name": "B2Gold Corp",
+      "color": "#5f27cd"
     }
   ]
 }

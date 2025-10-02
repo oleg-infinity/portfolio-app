@@ -1,6 +1,6 @@
 {
   "version": "1.1",
-  "lastUpdate": "2025-10-01T12:33:30.244Z",
+  "lastUpdate": "2025-10-02T09:54:33.964Z",
   "assets": [
     {
       "symbol": "SNAP",
@@ -9,25 +9,28 @@
       "quantity": 10,
       "color": "#FFA07A",
       "purchasePrice": 7,
-      "currentPrice": 7.71
+      "currentPrice": 7.71,
+      "purchaseDate": "2025-8-01"
     },
     {
       "symbol": "AIQ",
-      "price": 49.39,
+      "price": 49.89,
       "name": "Global X Artificial Intelligenc",
       "quantity": 1,
       "color": "#73fc03ff",
       "purchasePrice": 48,
-      "currentPrice": 49.39
+      "currentPrice": 49.89,
+      "purchaseDate": "2025-3-01"
     },
     {
       "symbol": "AAPL",
-      "price": 254.63,
-      "currentPrice": 254.63,
-      "purchasePrice": 254.595,
-      "quantity": 2,
+      "price": 255.45,
+      "currentPrice": 255.45,
+      "purchasePrice": 255.23625,
+      "quantity": 8,
       "name": "Apple Inc.",
-      "color": "#FFE66D"
+      "color": "#FFE66D",
+      "purchaseDate": "2025-5-23"
     }
   ]
 }

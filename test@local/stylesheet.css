@@ -23,7 +23,7 @@
     border-radius: 24px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     padding: 15px;
-    width: 418px;
+    width: 450px;
     height: 750px;
 }
 
@@ -205,13 +205,18 @@
     margin: 0;
 }
 
+.portfolio-scroll-container {
+    max-width: 600px;
+    max-height: 300px;
+}
+
 /* Assets Column */
 .assets-column {
     min-width: 420px;
 }
 
 .assets-header {
-    width: 100%;
+    width: 550px;
     height: 45px;
     border-bottom: 1px solid #525252;
     background-color: rgba(52, 52, 52, 0.3);
@@ -236,13 +241,13 @@
 
 /* Стилі для полів введення в режимі редагування */
 .edit-entry-field {
+    width: 80px;
     background-color: rgba(30, 30, 30, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 4px;
     padding: 2px 6px;
     color: #f8f8f2;
-    font-size: 11px;
-    width: 60px;
+    font-size: 12px;
 }
 
 .edit-entry-field:focus {
@@ -271,8 +276,8 @@
 
 .delete-icon {
     color: #ff6b6b;
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
 }
 
 .assets-container {
@@ -280,6 +285,7 @@
 }
 
 .asset-row {
+    min-width: 550px;
     padding: 10px;
     border-radius: 6px;
     background-color: rgba(0, 0, 0, 0.3);
@@ -292,7 +298,7 @@
 }
 
 .row-symbol {
-    width: 70px;
+    width: 80px;
     margin: auto;
     padding: auto;
     font-size: 16px;
@@ -309,24 +315,40 @@
 }
 
 .row-purchase-price {
-    width: 90px;
+    width: 80px;
     margin: auto;
     padding: auto;
     color: #f8f8f2;
 }
 
 .row-profitability {
-    width: 70px;
+    width: 80px;
     margin: auto;
     padding: auto;
 }
 
 .row-quantity {
-    width: 60px;
+    width: 80px;
     margin: auto;
     padding: auto;
     font-size: 11px;
     color: #f8f8f2;
+}
+
+.row-date {
+    width: 100px;
+}
+
+.row-empty {
+    width: 30px;
+}
+
+.asset-date {
+    width: 100px;
+}
+
+.asset-delete {
+    width: 30px;
 }
 
 /* Кольори для доходності */
@@ -340,13 +362,9 @@
 
 /* Chart Section */
 .chart-container {
-    min-width: 120px;
-}
-
-.chart-area {
-    background-color: rgba(68, 71, 90, 0.3);
-    border-radius: 50%;
-    border: 1px solid #525252;
+    min-width: 220px;
+    min-height: 220px;
+    padding: 10px;
 }
 
 .chart-legend {
@@ -512,4 +530,41 @@
 .suggestion-name {
     color: #cccccc;
     font-size: 11px;
+}
+
+/* Стилі тільки для кнопки перемикання графіка */
+.chart-toggle-button {
+    background-color: transparent;
+    box-shadow: 0 0 20px rgba(52, 52, 52, 0.712);
+    border: 1px solid #525252;
+    border-radius: 20px;
+    padding: 8px;
+    min-width: 32px;
+    min-height: 32px;
+    margin: 0 5px 0 0;
+}
+
+.chart-toggle-button:hover {
+    background-color: #303030;
+    box-shadow: 0 0 20px rgba(85, 180, 33, 0.712);
+    border: 1px solid #85ff33;
+}
+
+.chart-toggle-button:active {
+    background-color: #303030;
+    box-shadow: 0 0 20px rgba(85, 180, 33, 0.712);
+    border: 1px solid #85ff33;
+}
+
+.chart-toggle-icon {
+    color: #c9c9c9;
+    width: 16px;
+    height: 16px;
+}
+.chart-area {
+    min-width: 250px;
+    min-height: 200px;
+    background-color: rgba(245, 245, 245, 0.3);
+    border: 1px solid rgba(200, 200, 200, 0.5);
+    border-radius: 8px;
 }

@@ -1,76 +1,76 @@
 {
   "version": "1.1",
-  "lastUpdate": "2025-10-02T21:02:55.788Z",
+  "lastUpdate": "2025-10-03T10:28:37.934Z",
   "assets": [
-    {
-      "symbol": "SNAP",
-      "price": 8.22,
-      "name": "Snap Inc.",
-      "quantity": 10,
-      "color": "#FFA07A",
-      "purchasePrice": 7.05,
-      "currentPrice": 8.22,
-      "purchaseDate": "2025-08-01"
-    },
-    {
-      "symbol": "AIQ",
-      "price": 50.32,
-      "name": "Global X Artificial Intelligenc",
-      "quantity": 1,
-      "color": "#73fc03ff",
-      "purchasePrice": 40,
-      "currentPrice": 50.32,
-      "purchaseDate": "2025-03-01"
-    },
     {
       "symbol": "AAPL",
       "price": 257.13,
       "currentPrice": 257.13,
-      "purchasePrice": 209.24,
-      "quantity": 8,
+      "purchasePrice": 254.13,
+      "quantity": 1,
+      "purchaseDate": "2025-10-03",
       "name": "Apple Inc.",
-      "color": "#FFE66D",
-      "purchaseDate": "2025-05-23"
+      "color": "#45b7d1"
     },
     {
-      "symbol": "ETHA",
-      "price": 34.05,
-      "currentPrice": 34.05,
-      "purchasePrice": 30.8,
+      "symbol": "MSFT",
+      "price": 515.74,
+      "currentPrice": 515.74,
+      "purchasePrice": 515.74,
       "quantity": 1,
-      "purchaseDate": "2025-01-02",
-      "name": "iShares Ethereum Trust - iShare",
+      "purchaseDate": "2025-10-03",
+      "name": "Microsoft Corporation",
       "color": "#54a0ff"
+    },
+    {
+      "symbol": "TSLA",
+      "price": 436,
+      "currentPrice": 436,
+      "purchasePrice": 436,
+      "quantity": 1,
+      "purchaseDate": "2025-10-03",
+      "name": "Tesla, Inc.",
+      "color": "#4ecdc4"
+    },
+    {
+      "symbol": "GOOG",
+      "price": 246.43,
+      "currentPrice": 246.43,
+      "purchasePrice": 246.43,
+      "quantity": 1,
+      "purchaseDate": "2025-10-03",
+      "name": "Alphabet Inc.",
+      "color": "#45b7d1"
+    },
+    {
+      "symbol": "NVDA",
+      "price": 188.89,
+      "currentPrice": 188.89,
+      "purchasePrice": 181.89,
+      "quantity": 1,
+      "purchaseDate": "2025-10-03",
+      "name": "NVIDIA Corporation",
+      "color": "#ff6b6b"
+    },
+    {
+      "symbol": "SPLG",
+      "price": 78.72,
+      "currentPrice": 78.72,
+      "purchasePrice": 78.72,
+      "quantity": 1,
+      "purchaseDate": "2025-10-03",
+      "name": "SPDR Portfolio S&P 500 ETF",
+      "color": "#45b7d1"
     },
     {
       "symbol": "B",
       "price": 33.92,
       "currentPrice": 33.92,
-      "purchasePrice": 25.71,
-      "quantity": 5,
-      "purchaseDate": "2025-10-02",
-      "name": "Barrick Mining Corporation",
-      "color": "#5f27cd"
-    },
-    {
-      "symbol": "A",
-      "price": 138.7,
-      "currentPrice": 138.7,
-      "purchasePrice": 138.58,
+      "purchasePrice": 33.92,
       "quantity": 1,
-      "purchaseDate": "2024-02-02",
-      "name": "Agilent Technologies, Inc.",
-      "color": "#ff6b6b"
-    },
-    {
-      "symbol": "BTG",
-      "price": 5.03,
-      "currentPrice": 5.03,
-      "purchasePrice": 3,
-      "quantity": 10,
-      "purchaseDate": "2024-08-02",
-      "name": "B2Gold Corp",
-      "color": "#5f27cd"
+      "purchaseDate": "2025-10-03",
+      "name": "Barrick Mining Corporation",
+      "color": "#96ceb4"
     }
   ]
 }

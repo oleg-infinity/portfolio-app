@@ -23,17 +23,37 @@ export default class MyExtension {
         this._isChartView = true;
         this._chartToggleButton = null;
         this._priceHistory = [];
-        this._maxHistoryPoints = 500; // Збільшено для довшого періоду
+        this._maxHistoryPoints = 1000;
         this._chartScrollOffset = 0;
-        this._chartVisiblePoints = 20; // Збільшено видимих точок
+        this._chartVisiblePoints = 50;
         this._isDraggingChart = false;
         this._dragStartX = 0;
-        this._timeRange = '1m'; // 1 день, 1 тиждень, 1 місяць, 1 рік, custom
+        this._timeRange = '1m';
         this._timeRangeButtons = null;
         this._customStartDate = null;
         this._customEndDate = null;
+        
+        // Додаємо тестові дані для графіка
+        this._generateTestData();
     }
 
+    _generateTestData() {
+        // Генеруємо тестові дані для демонстрації
+        const now = Date.now();
+        const dayMs = 24 * 60 * 60 * 1000;
+        
+        for (let i = 30; i >= 0; i--) {
+            const timestamp = now - (i * dayMs);
+            const value = 1000 + Math.sin(i * 0.2) * 200 + Math.random() * 50;
+            const profitability = Math.sin(i * 0.1) * 20 + Math.random() * 5;
+            
+            this._priceHistory.push({
+                timestamp: timestamp,
+                value: value,
+                profitability: profitability
+            });
+        }
+    }
 
     enable() {
         try {
@@ -423,7 +443,7 @@ export default class MyExtension {
         this._isEditMode = !this._isEditMode;
     
         if (this._isEditMode) {
-            this._editModeButton.get_child().icon_name = 'emblem-system-symbolic';
+            this._editModeButton.get_child().icon_name = 'emblem-ok-symbolic';
             this._editModeButton.add_style_pseudo_class('active');
         } else {
             this._editModeButton.get_child().icon_name = 'emblem-system-symbolic';
@@ -721,88 +741,136 @@ export default class MyExtension {
             vertical: true,
             style_class: 'assets-container'
         });
+
+        const horizontalLine2 = new St.BoxLayout({
+            style_class: 'horizontal-line'
+        });
         
         assetsColumn.add_child(this._assetsContainer);
         scrollContainer.add_child(assetsColumn);
         contentArea.add_child(scrollContainer);
+        contentArea.add_child(horizontalLine2);
 
-        const bottomSection = new St.BoxLayout({
-            style_class: 'portfolio-bottom-section'
+        // Statistics Cards
+        const statsCardsContainer = new St.BoxLayout({
+            style_class: 'stats-cards-container'
         });
 
-        const statsContainer = new St.BoxLayout({
+        this._totalValueCard = new St.BoxLayout({
             vertical: true,
-            style_class: 'stats-container'
+            style_class: 'stats-card stats-card-value'
+        });
+
+        this._totalProfitCard = new St.BoxLayout({
+            vertical: true,
+            style_class: 'stats-card stats-card-profit'
+        });
+
+        this._totalInvestmentCard = new St.BoxLayout({
+            vertical: true,
+            style_class: 'stats-card stats-card-investment'
+        });
+
+        const valueTitle = new St.Label({
+            text: 'ЗАГАЛЬНА ВАРТІСТЬ',
+            style_class: 'stats-card-title'
+        });
+
+        const profitTitle = new St.Label({
+            text: 'ДОХІДНІСТЬ',
+            style_class: 'stats-card-title'
+        });
+
+        const investmentTitle = new St.Label({
+            text: 'ІНВЕСТИЦІЇ',
+            style_class: 'stats-card-title'
         });
 
         this._totalValueLabel = new St.Label({
-            text: 'Загальна вартість: $0.00',
-            style_class: 'total-value'
+            text: '$0.00',
+            style_class: 'stats-card-value'
         });
-        statsContainer.add_child(this._totalValueLabel);
 
         this._totalProfitLabel = new St.Label({
-            text: 'Загальна дохідність: 0.00%',
-            style_class: 'total-profit'
+            text: '0.00%',
+            style_class: 'stats-card-profit'
         });
-        statsContainer.add_child(this._totalProfitLabel);
 
         this._totalInvestmentLabel = new St.Label({
-            text: 'Загальні інвестиції: $0.00',
-            style_class: 'total-investment'
+            text: '$0.00',
+            style_class: 'stats-card-investment'
         });
-        statsContainer.add_child(this._totalInvestmentLabel);
 
-        const chartContainer = new St.BoxLayout({
+        this._totalValueCard.add_child(valueTitle);
+        this._totalValueCard.add_child(this._totalValueLabel);
+
+        this._totalProfitCard.add_child(profitTitle);
+        this._totalProfitCard.add_child(this._totalProfitLabel);
+
+        this._totalInvestmentCard.add_child(investmentTitle);
+        this._totalInvestmentCard.add_child(this._totalInvestmentLabel);
+
+        statsCardsContainer.add_child(this._totalValueCard);
+        statsCardsContainer.add_child(this._totalProfitCard);
+        statsCardsContainer.add_child(this._totalInvestmentCard);
+
+        contentArea.add_child(statsCardsContainer);
+
+        // Chart Section
+        const chartSection = new St.BoxLayout({
             vertical: true,
-            style_class: 'chart-container'
+            style_class: 'chart-section'
+        });
+
+        const chartHeader = new St.BoxLayout({
+            style_class: 'chart-header'
         });
 
         this._chartTitle = new St.Label({
-            text: 'Розподіл портфеля:',
+            text: 'РОЗПОДІЛ ПОРТФЕЛЯ',
             style_class: 'chart-title'
         });
-        chartContainer.add_child(this._chartTitle);
 
-        if (!this._isChartView) {
-            const timeRangeContainer = new St.BoxLayout({
-                style_class: 'time-range-container'
+        // Time range selector for line chart
+        this._timeRangeContainer = new St.BoxLayout({
+            style_class: 'time-range-container'
+        });
+        
+        const timeRanges = [
+            { id: '1d', label: '1Д' },
+            { id: '1w', label: '1Т' },
+            { id: '1m', label: '1М' },
+            { id: '1y', label: '1Р' },
+            { id: 'custom', label: 'Свій' }
+        ];
+        
+        this._timeRangeButtons = [];
+        
+        timeRanges.forEach(range => {
+            const button = new St.Button({
+                label: range.label,
+                style_class: 'time-range-button'
             });
             
-            const timeRanges = [
-                { id: '1d', label: '1Д' },
-                { id: '1w', label: '1Т' },
-                { id: '1m', label: '1М' },
-                { id: '1y', label: '1Р' },
-                { id: 'custom', label: 'Свій' }
-            ];
+            if (range.id === this._timeRange) {
+                button.add_style_pseudo_class('active');
+            }
             
-            this._timeRangeButtons = [];
-            
-            timeRanges.forEach(range => {
-                const button = new St.Button({
-                    label: range.label,
-                    style_class: 'time-range-button'
-                });
-                
-                if (range.id === this._timeRange) {
-                    button.add_style_pseudo_class('active');
-                }
-                
-                button.connect('clicked', () => {
-                    this._setTimeRange(range.id);
-                });
-                
-                timeRangeContainer.add_child(button);
-                this._timeRangeButtons.push(button);
+            button.connect('clicked', () => {
+                this._setTimeRange(range.id);
             });
             
-            chartContainer.add_child(timeRangeContainer);
-        }
+            this._timeRangeContainer.add_child(button);
+            this._timeRangeButtons.push(button);
+        });
+        
+        chartHeader.add_child(this._chartTitle);
+        chartHeader.add_child(this._timeRangeContainer);
+        this._timeRangeContainer.hide();
 
         this._chartArea = new St.DrawingArea({
             style_class: 'chart-area',
-            width: 350,
+            width: 450,
             height: 250,
             reactive: true,
             can_focus: true,
@@ -813,7 +881,7 @@ export default class MyExtension {
             this._drawChart(area);
         });
 
-        // Додаємо обробники для гортання
+        // Add scroll handlers
         this._chartArea.connect('button-press-event', (actor, event) => {
             if (!this._isChartView) {
                 this._isDraggingChart = true;
@@ -837,12 +905,13 @@ export default class MyExtension {
                 const deltaX = currentX - this._dragStartX;
                 
                 if (Math.abs(deltaX) > 3) {
-                    const scrollSensitivity = 2.0;
+                    const scrollSensitivity = 3.0;
                     const scrollDelta = Math.sign(deltaX) * scrollSensitivity;
                     
+                    const filteredHistory = this._getFilteredHistory();
                     this._chartScrollOffset = Math.max(0, 
                         Math.min(this._chartScrollOffset + scrollDelta, 
-                                this._priceHistory.length - this._chartVisiblePoints)
+                                Math.max(0, filteredHistory.length - this._chartVisiblePoints))
                     );
                     
                     this._chartArea.queue_repaint();
@@ -856,13 +925,14 @@ export default class MyExtension {
         this._chartArea.connect('scroll-event', (actor, event) => {
             if (!this._isChartView) {
                 const direction = event.get_scroll_direction();
+                const filteredHistory = this._getFilteredHistory();
                 
                 if (direction === Clutter.ScrollDirection.UP || direction === Clutter.ScrollDirection.LEFT) {
-                    this._chartScrollOffset = Math.max(0, this._chartScrollOffset - 5);
+                    this._chartScrollOffset = Math.max(0, this._chartScrollOffset - 10);
                 } else if (direction === Clutter.ScrollDirection.DOWN || direction === Clutter.ScrollDirection.RIGHT) {
                     this._chartScrollOffset = Math.min(
-                        this._priceHistory.length - this._chartVisiblePoints,
-                        this._chartScrollOffset + 5
+                        Math.max(0, filteredHistory.length - this._chartVisiblePoints),
+                        this._chartScrollOffset + 10
                     );
                 }
                 
@@ -872,21 +942,20 @@ export default class MyExtension {
             return Clutter.EVENT_PROPAGATE;
         });
 
-        // === ВИПРАВЛЕННЯ: Ініціалізуємо _chartLegend перед використанням ===
         this._chartLegend = new St.BoxLayout({
             vertical: true,
             style_class: 'chart-legend'
         });
 
-        chartContainer.add_child(this._chartArea);
-        chartContainer.add_child(this._chartLegend);
+        chartSection.add_child(chartHeader);
+        chartSection.add_child(this._chartArea);
+        chartSection.add_child(this._chartLegend);
 
-        bottomSection.add_child(statsContainer);
-        bottomSection.add_child(chartContainer);
+        contentArea.add_child(chartSection);
+
         mainContainer.add_child(header);
         mainContainer.add_child(horizontalLine);
         mainContainer.add_child(contentArea);
-        mainContainer.add_child(bottomSection);
         this._window.add_child(mainContainer);
         this._repositionWindow();
         
@@ -906,7 +975,7 @@ export default class MyExtension {
         this._updateChartView();
     }
 
-     _getFilteredHistory() {
+    _getFilteredHistory() {
         if (this._timeRange === 'all' || this._priceHistory.length === 0) {
             return this._priceHistory;
         }
@@ -916,19 +985,25 @@ export default class MyExtension {
 
         switch (this._timeRange) {
             case '1d':
-                timeAgo = now - (24 * 60 * 60 * 1000); // 1 день
+                timeAgo = now - (24 * 60 * 60 * 1000);
                 break;
             case '1w':
-                timeAgo = now - (7 * 24 * 60 * 60 * 1000); // 1 тиждень
+                timeAgo = now - (7 * 24 * 60 * 60 * 1000);
                 break;
             case '1m':
-                timeAgo = now - (30 * 24 * 60 * 60 * 1000); // 1 місяць
+                timeAgo = now - (30 * 24 * 60 * 60 * 1000);
                 break;
             case '1y':
-                timeAgo = now - (365 * 24 * 60 * 60 * 1000); // 1 рік
+                timeAgo = now - (365 * 24 * 60 * 60 * 1000);
                 break;
             case 'custom':
-                // Тут можна додати логіку для кастомного діапазону
+                if (this._customStartDate && this._customEndDate) {
+                    const startDate = new Date(this._customStartDate).getTime();
+                    const endDate = new Date(this._customEndDate).getTime();
+                    return this._priceHistory.filter(point => 
+                        point.timestamp >= startDate && point.timestamp <= endDate
+                    );
+                }
                 return this._priceHistory;
             default:
                 return this._priceHistory;
@@ -940,7 +1015,6 @@ export default class MyExtension {
     _setTimeRange(range) {
         this._timeRange = range;
         
-        // Оновлюємо активні кнопки
         if (this._timeRangeButtons) {
             this._timeRangeButtons.forEach(button => {
                 button.remove_style_pseudo_class('active');
@@ -952,15 +1026,12 @@ export default class MyExtension {
             }
         }
         
-        // Скидаємо прокрутку
         this._chartScrollOffset = 0;
         
-        // Оновлюємо графік
         if (this._chartArea) {
             this._chartArea.queue_repaint();
         }
         
-        // Якщо обрано кастомний діапазон, показуємо діалог вибору дат
         if (range === 'custom') {
             this._showCustomDateDialog();
         }
@@ -974,24 +1045,22 @@ export default class MyExtension {
             const panelHeight = Main.panel.height;
             const monitor = Main.layoutManager.primaryMonitor;
             
-            // Перевірка на коректні координати
             if (buttonX === undefined || buttonY === undefined) {
-                this._window.set_size(450, 600);
-                this._window.set_position(100, 100);
+                this._window.set_size(500, 900);
+                this._window.set_position(120, 120);
                 return;
             }
             
-            const x = Math.min(buttonX, monitor.width - 450);
+            const x = Math.min(buttonX, monitor.width - 500);
             const y = buttonY + panelHeight + 10;
             
-            // Гарантуємо мінімальні розміри
-            this._window.set_size(450, 600);
+            this._window.set_size(500, 900);
             this._window.set_position(Math.max(0, x), Math.max(0, y));
             
         } catch (error) {
             log(`Помилка позиціонування вікна: ${error}`);
-            this._window.set_size(450, 600);
-            this._window.set_position(100, 100);
+            this._window.set_size(500, 900);
+            this._window.set_position(120, 120);
         }
     }
 
@@ -1056,7 +1125,6 @@ export default class MyExtension {
             this._customStartDate = startDateEntry.text;
             this._customEndDate = endDateEntry.text;
             
-            // Перевіряємо коректність дат
             const startDate = new Date(this._customStartDate);
             const endDate = new Date(this._customEndDate);
             
@@ -1262,13 +1330,11 @@ export default class MyExtension {
                 this._updatePriceHistory();
             }
             
-            // Очищаємо контейнери
             this._assetsContainer.destroy_all_children();
             if (this._chartLegend) {
                 this._chartLegend.destroy_all_children();
             }
 
-            // ШВИДКІ розрахунки загальних показників
             let totalValue = 0;
             let totalInvestment = 0;
             let totalProfit = 0;
@@ -1292,7 +1358,27 @@ export default class MyExtension {
 
             const totalProfitability = totalInvestment > 0 ? (totalProfit / totalInvestment) * 100 : 0;
 
-            // ШВИДКЕ створення рядків активів
+            // Update statistics cards
+            if (this._totalValueLabel) {
+                this._totalValueLabel.set_text(`$${totalValue.toFixed(2)}`);
+            }
+
+            if (this._totalProfitLabel) {
+                this._totalProfitLabel.set_text(`${totalProfitability.toFixed(2)}%`);
+                // Update color based on profitability
+                if (totalProfitability >= 0) {
+                    this._totalProfitLabel.style_class = 'stats-card-profit profit-positive';
+                    this._totalProfitCard.style_class = 'stats-card stats-card-profit profit-positive';
+                } else {
+                    this._totalProfitLabel.style_class = 'stats-card-profit profit-negative';
+                    this._totalProfitCard.style_class = 'stats-card stats-card-profit profit-negative';
+                }
+            }
+
+            if (this._totalInvestmentLabel) {
+                this._totalInvestmentLabel.set_text(`$${totalInvestment.toFixed(2)}`);
+            }
+
             for (let i = 0; i < this._assetsData.length; i++) {
                 const asset = this._assetsData[i];
                 if (!asset) continue;
@@ -1305,21 +1391,23 @@ export default class MyExtension {
                     style_class: "asset-row"
                 });
 
-                // Додаємо всі елементи рядка
+                // Symbol
                 assetRow.add_child(new St.Label({
                     text: asset.symbol,
-                    style_class: 'row-symbol'
+                    style_class: 'asset-cell asset-name'
                 }));
 
+                // Current Price
                 assetRow.add_child(new St.Label({
                     text: `$${(asset.price || 0).toFixed(2)}`,
-                    style_class: 'row-price'
+                    style_class: 'asset-cell asset-price'
                 }));
 
+                // Purchase Price
                 if (this._isEditMode) {
                     const purchasePriceEntry = new St.Entry({
                         text: (asset.purchasePrice || 0).toFixed(2),
-                        style_class: 'edit-entry-field'
+                        style_class: 'asset-cell edit-entry-field'
                     });
                 
                     purchasePriceEntry.clutter_text.connect('text-changed', () => {
@@ -1330,14 +1418,15 @@ export default class MyExtension {
                 } else {
                     assetRow.add_child(new St.Label({
                         text: `$${(asset.purchasePrice || 0).toFixed(2)}`,
-                        style_class: 'row-purchase-price'
+                        style_class: 'asset-cell asset-purchase-price'
                     }));
                 }
 
+                // Quantity
                 if (this._isEditMode) {
                     const quantityEntry = new St.Entry({
                         text: (asset.quantity || 1).toString(),
-                        style_class: 'edit-entry-field'
+                        style_class: 'asset-cell edit-entry-field'
                     });
                 
                     quantityEntry.clutter_text.connect('text-changed', () => {
@@ -1349,21 +1438,22 @@ export default class MyExtension {
                 } else {
                     assetRow.add_child(new St.Label({
                         text: (asset.quantity || 1).toString(),
-                        style_class: 'row-quantity'
+                        style_class: 'asset-cell asset-quantity'
                     }));
                 }
 
+                // Profitability
                 const profitabilityColor = profitability >= 0 ? 'profit-positive' : 'profit-negative';
                 assetRow.add_child(new St.Label({
                     text: `${profitability.toFixed(2)}%`,
-                    style_class: `row-profitability ${profitabilityColor}`
+                    style_class: `asset-cell asset-profitability ${profitabilityColor}`
                 }));
 
-                // Дата
+                // Date
                 if (this._isEditMode) {
                     const dateEntry = new St.Entry({
                         text: asset.purchaseDate || new Date().toISOString().split('T')[0],
-                        style_class: 'edit-entry-field'
+                        style_class: 'asset-cell edit-entry-field'
                     });
                 
                     dateEntry.clutter_text.connect('text-changed', () => {
@@ -1373,18 +1463,18 @@ export default class MyExtension {
                 } else {
                     assetRow.add_child(new St.Label({
                         text: asset.purchaseDate || new Date().toISOString().split('T')[0],
-                        style_class: 'row-date'
+                        style_class: 'asset-cell asset-date'
                     }));
                 }
 
-                // Кнопка видалення
+                // Delete Button
                 if (this._isEditMode) {
                     const deleteButton = new St.Button({
                         child: new St.Icon({ 
                             icon_name: 'window-close-symbolic',
                             style_class: 'delete-icon'
                         }),
-                        style_class: 'delete-button'
+                        style_class: 'asset-cell delete-button'
                     });
 
                     deleteButton.connect('clicked', () => {
@@ -1395,20 +1485,20 @@ export default class MyExtension {
                 } else {
                     assetRow.add_child(new St.Label({
                         text: '',
-                        style_class: 'row-empty'
+                        style_class: 'asset-cell asset-empty'
                     }));
                 }
 
                 this._assetsContainer.add_child(assetRow);
 
-                // ШВИДКА легенда для графіка
+                // Chart Legend
                 if (this._chartLegend) {
                     const legendItem = new St.BoxLayout({
                         style_class: 'legend-item'
                     });
 
                     const colorBox = new St.Widget({
-                        style: `background-color: ${asset.color || '#73fc03'}; width: 12px; height: 12px; border-radius: 2px; margin-right: 8px;`
+                        style: `background-color: ${asset.color || '#85ff33'}; width: 12px; height: 12px; border-radius: 2px; margin-right: 8px;`
                     });
 
                     let legendText;
@@ -1429,29 +1519,12 @@ export default class MyExtension {
                 }
             }
 
-            // Оновлюємо статистику
-            if (this._totalValueLabel) {
-                this._totalValueLabel.set_text(`Загальна вартість: $${totalValue.toFixed(2)}`);
-            }
-
-            if (this._totalProfitLabel) {
-                const profitColor = totalProfitability >= 0 ? 'profit-positive' : 'profit-negative';
-                this._totalProfitLabel.set_text(`Загальна дохідність: ${totalProfitability.toFixed(2)}%`);
-                this._totalProfitLabel.style_class = `total-profit ${profitColor}`;
-            }
-
-            if (this._totalInvestmentLabel) {
-                this._totalInvestmentLabel.set_text(`Загальні інвестиції: $${totalInvestment.toFixed(2)}`);
-            }
-
-            // Оновлюємо графік (МІНІМАЛЬНИЙ ВПЛИВ)
             if (this._chartArea && this._chartArea.width > 0 && this._chartArea.height > 0) {
                 this._chartArea.queue_repaint();
             }
         } catch (e) {
             log(`Помилка оновлення портфеля: ${e}`);
         }
-        if (!this._isWindowVisible) return;
     }
 
     _deleteAsset(index) {
@@ -1523,7 +1596,8 @@ export default class MyExtension {
         
         if (!this._isChartView) {
             this._updatePriceHistory();
-            this._chartScrollOffset = Math.max(0, this._getFilteredHistory().length - this._chartVisiblePoints);
+            const filteredHistory = this._getFilteredHistory();
+            this._chartScrollOffset = Math.max(0, filteredHistory.length - this._chartVisiblePoints);
         }
         
         this._updateChartView();
@@ -1533,17 +1607,18 @@ export default class MyExtension {
         if (this._chartToggleButton) {
             if (this._isChartView) {
                 this._chartToggleButton.get_child().icon_name = 'view-pie-symbolic';
-                this._chartTitle.set_text('Розподіл портфеля:');
+                this._chartTitle.set_text('РОЗПОДІЛ ПОРТФЕЛЯ');
+                this._timeRangeContainer.hide();
             } else {
                 this._chartToggleButton.get_child().icon_name = 'view-line-symbolic';
-                this._chartTitle.set_text('Тренд портфеля:');
+                this._chartTitle.set_text('ТРЕНД ПОРТФЕЛЯ');
+                this._timeRangeContainer.show();
             }
         }
         
         this._updatePortfolioData();
     }
 
-        // Додайте метод для оновлення історії цін
     _updatePriceHistory() {
         try {
             const totalValue = this._calculateTotalValue();
@@ -1552,21 +1627,14 @@ export default class MyExtension {
             
             if (isNaN(totalValue) || isNaN(profitability)) return;
             
-            // Додаємо нову точку
             this._priceHistory.push({
                 timestamp: now,
                 value: totalValue,
                 profitability: profitability
             });
             
-            // Обмежуємо кількість точок
             if (this._priceHistory.length > this._maxHistoryPoints) {
                 this._priceHistory = this._priceHistory.slice(-this._maxHistoryPoints);
-            }
-            
-            // Логування для дебагу (тимчасово)
-            if (this._priceHistory.length % 5 === 0) {
-                log(`Історія цін: ${this._priceHistory.length} точок, остання вартість: $${totalValue.toFixed(2)}`);
             }
             
         } catch (e) {
@@ -1574,7 +1642,6 @@ export default class MyExtension {
         }
     }
 
-    // Додайте ці методи для розрахунків
     _calculateTotalValue() {
         let total = 0;
         for (let i = 0; i < this._assetsData.length; i++) {
@@ -1603,13 +1670,25 @@ export default class MyExtension {
 
     _drawAdvancedLineChart(area) {
         if (this._isChartView || !this._priceHistory || this._priceHistory.length < 2) {
+            // Draw empty state
+            if (area && area.get_context) {
+                const cr = area.get_context();
+                if (cr) {
+                    cr.setSourceRGBA(0.086, 0.086, 0.086, 0.98);
+                    cr.paint();
+                    cr.setSourceRGBA(0.85, 0.85, 0.85, 1);
+                    cr.setFontSize(12);
+                    cr.moveTo(area.width / 2 - 60, area.height / 2);
+                    cr.showText('Недостатньо даних для графіка');
+                }
+            }
             return;
         }
         
         try {
             if (!area) return;
             
-            const width = area.width || 350;
+            const width = area.width || 450;
             const height = area.height || 250;
             
             if (width <= 10 || height <= 10) return;
@@ -1617,22 +1696,20 @@ export default class MyExtension {
             const cr = area.get_context();
             if (!cr) return;
             
-            // Очищення фону
-            cr.setSourceRGBA(1, 1, 1, 1);
+            // Clear background with window color
+            cr.setSourceRGBA(0.086, 0.086, 0.086, 0.98);
             cr.paint();
             
-            // Використовуємо відфільтровану історію
             const filteredHistory = this._getFilteredHistory();
             
             if (filteredHistory.length < 2) {
-                // Малюємо повідомлення про відсутність даних
-                cr.setSourceRGBA(0.5, 0.5, 0.5, 1);
+                cr.setSourceRGBA(0.85, 0.85, 0.85, 1);
+                cr.setFontSize(12);
                 cr.moveTo(width / 2 - 50, height / 2);
                 cr.showText('Недостатньо даних');
                 return;
             }
             
-            // Обчислюємо видимий діапазон
             const totalPoints = filteredHistory.length;
             const maxOffset = Math.max(0, totalPoints - this._chartVisiblePoints);
             this._chartScrollOffset = Math.min(this._chartScrollOffset, maxOffset);
@@ -1644,7 +1721,6 @@ export default class MyExtension {
             
             if (visiblePoints.length < 2) return;
             
-            // Знаходимо мінімальні та максимальні значення
             let minValue = Infinity;
             let maxValue = -Infinity;
             let minProfit = Infinity;
@@ -1658,7 +1734,6 @@ export default class MyExtension {
                 maxProfit = Math.max(maxProfit, point.profitability);
             }
             
-            // Додаємо відступи
             const valueRange = maxValue - minValue;
             const profitRange = maxProfit - minProfit;
             const valuePadding = valueRange * 0.1;
@@ -1672,18 +1747,17 @@ export default class MyExtension {
             const adjustedValueRange = Math.max(maxValue - minValue, 1);
             const adjustedProfitRange = Math.max(maxProfit - minProfit, 1);
             
-            const padding = { top: 40, right: 30, bottom: 50, left: 60 }; // Збільшено padding
+            const padding = { top: 40, right: 40, bottom: 50, left: 70 };
             const chartWidth = width - padding.left - padding.right;
             const chartHeight = height - padding.top - padding.bottom;
             
-            // Функція для округлення координат
             const roundCoord = (num) => Math.round(num) + 0.5;
             
-            // Малюємо сітку
-            cr.setSourceRGBA(0.9, 0.9, 0.9, 1);
+            // Draw grid
+            cr.setSourceRGBA(0.3, 0.3, 0.3, 0.6);
             cr.setLineWidth(1);
             
-            // Вертикальні лінії сітки
+            // Vertical grid lines
             for (let i = 0; i <= 5; i++) {
                 const x = roundCoord(padding.left + (i / 5) * chartWidth);
                 cr.moveTo(x, padding.top);
@@ -1691,7 +1765,7 @@ export default class MyExtension {
                 cr.stroke();
             }
             
-            // Горизонтальні лінії сітки
+            // Horizontal grid lines
             for (let i = 0; i <= 5; i++) {
                 const y = roundCoord(padding.top + (i / 5) * chartHeight);
                 cr.moveTo(padding.left, y);
@@ -1699,9 +1773,9 @@ export default class MyExtension {
                 cr.stroke();
             }
             
-            // ВИПРАВЛЕННЯ: Зелена лінія вартості - товща та яскрава
-            cr.setSourceRGBA(0.0, 0.7, 0.0, 1); // Яскраво-зелений
-            cr.setLineWidth(3); // Товща лінія
+            // Draw value line (green)
+            cr.setSourceRGBA(0.52, 1.0, 0.2, 1); // #85ff33
+            cr.setLineWidth(3);
             cr.setLineCap(2); // ROUND line cap
             
             const firstValuePoint = visiblePoints[0];
@@ -1717,10 +1791,10 @@ export default class MyExtension {
             }
             cr.stroke();
             
-            // Синьо-блакитна лінія доходності
-            cr.setSourceRGBA(0.2, 0.4, 1.0, 1); // Яскраво-синій
+            // Draw profitability line (light green)
+            cr.setSourceRGBA(0.52, 1.0, 0.2, 0.8);
             cr.setLineWidth(2.5);
-            cr.setLineCap(2);
+            cr.setLineCap(2); // ROUND line cap
             
             const firstProfitPoint = visiblePoints[0];
             firstX = roundCoord(padding.left);
@@ -1735,19 +1809,19 @@ export default class MyExtension {
             }
             cr.stroke();
             
-            // Точки для вартості (зелені)
-            cr.setSourceRGBA(0.0, 0.7, 0.0, 1);
+            // Draw value points
+            cr.setSourceRGBA(0.52, 1.0, 0.2, 1);
             for (let i = 0; i < visiblePoints.length; i++) {
                 const point = visiblePoints[i];
                 const x = roundCoord(padding.left + (i / (visiblePoints.length - 1)) * chartWidth);
                 const y = roundCoord(padding.top + chartHeight - ((point.value - minValue) / adjustedValueRange) * chartHeight);
                 
-                cr.arc(x, y, 4, 0, 2 * Math.PI); // Більші точки
+                cr.arc(x, y, 4, 0, 2 * Math.PI);
                 cr.fill();
             }
             
-            // Точки для доходності (сині)
-            cr.setSourceRGBA(0.2, 0.4, 1.0, 1);
+            // Draw profitability points
+            cr.setSourceRGBA(0.52, 1.0, 0.2, 0.8);
             for (let i = 0; i < visiblePoints.length; i++) {
                 const point = visiblePoints[i];
                 const x = roundCoord(padding.left + (i / (visiblePoints.length - 1)) * chartWidth);
@@ -1757,19 +1831,19 @@ export default class MyExtension {
                 cr.fill();
             }
             
-            // Підписи осей
-            cr.setSourceRGBA(0.2, 0.2, 0.2, 1);
+            // Axis labels
+            cr.setSourceRGBA(0.85, 0.85, 0.85, 1);
             cr.setFontSize(10);
             
-            // Ліва вісь (вартість)
+            // Left axis (value)
             for (let i = 0; i <= 5; i++) {
                 const value = minValue + (i / 5) * (maxValue - minValue);
                 const y = padding.top + chartHeight - (i / 5) * chartHeight;
-                cr.moveTo(padding.left - 55, y + 4);
+                cr.moveTo(padding.left - 65, y + 4);
                 cr.showText(`$${value.toFixed(0)}`);
             }
             
-            // Права вісь (доходність)
+            // Right axis (profitability)
             for (let i = 0; i <= 5; i++) {
                 const value = minProfit + (i / 5) * (maxProfit - minProfit);
                 const y = padding.top + chartHeight - (i / 5) * chartHeight;
@@ -1777,7 +1851,7 @@ export default class MyExtension {
                 cr.showText(`${value.toFixed(1)}%`);
             }
             
-            // Часова вісь
+            // Time axis
             if (visiblePoints.length >= 2) {
                 const firstDate = new Date(visiblePoints[0].timestamp);
                 const lastDate = new Date(visiblePoints[visiblePoints.length - 1].timestamp);
@@ -1789,26 +1863,26 @@ export default class MyExtension {
                 cr.showText(this._formatDateTime(lastDate));
             }
             
-            // Легенда
-            cr.setSourceRGBA(0.0, 0.7, 0.0, 1);
+            // Legend
+            cr.setSourceRGBA(0.52, 1.0, 0.2, 1);
             cr.rectangle(padding.left, 15, 20, 4);
             cr.fill();
             cr.moveTo(padding.left + 25, 18);
             cr.showText('Загальна вартість');
             
-            cr.setSourceRGBA(0.2, 0.4, 1.0, 1);
+            cr.setSourceRGBA(0.52, 1.0, 0.2, 0.8);
             cr.rectangle(padding.left + 150, 15, 20, 4);
             cr.fill();
             cr.moveTo(padding.left + 175, 18);
             cr.showText('Доходність');
             
-            // Індикатор прокрутки (тільки якщо є що прокручувати)
+            // Scroll indicator
             if (totalPoints > this._chartVisiblePoints) {
                 this._drawScrollIndicator(cr, width, height, startIndex, totalPoints);
             }
             
-            // Інформація про видимий діапазон
-            cr.setSourceRGBA(0.5, 0.5, 0.5, 0.8);
+            // Range info
+            cr.setSourceRGBA(0.7, 0.7, 0.7, 0.8);
             cr.moveTo(padding.left, padding.top - 10);
             cr.showText(`Точки ${startIndex + 1}-${endIndex} з ${totalPoints}`);
             
@@ -1830,28 +1904,40 @@ export default class MyExtension {
 
     _drawDonutChart(area) {
         if (!this._isChartView || !this._assetsData || this._assetsData.length === 0) {
+            // Draw empty state
+            if (area && area.get_context) {
+                const cr = area.get_context();
+                if (cr) {
+                    cr.setSourceRGBA(0.086, 0.086, 0.086, 0.98);
+                    cr.paint();
+                    cr.setSourceRGBA(0.85, 0.85, 0.85, 1);
+                    cr.setFontSize(12);
+                    cr.moveTo(area.width / 2 - 80, area.height / 2);
+                    cr.showText('Додайте активи для відображення діаграми');
+                }
+            }
             return;
         }
         
         try {
             if (!area) return;
             
-            const width = area.width || 250;
-            const height = area.height || 200;
+            const width = area.width || 450;
+            const height = area.height || 250;
             
             if (width <= 10 || height <= 10) return;
             
             const cr = area.get_context();
             if (!cr) return;
             
-            // ВИПРАВЛЕННЯ: Суцільний білий фон
-            cr.setSourceRGBA(1, 1, 1, 1);
+            // Clear background with window color
+            cr.setSourceRGBA(0.086, 0.086, 0.086, 0.98);
             cr.paint();
             
             const centerX = Math.round(width / 2);
             const centerY = Math.round(height / 2);
-            const outerRadius = Math.min(width, height) / 2 - 20;
-            const innerRadius = outerRadius * 0.6;
+            const outerRadius = Math.min(width, height) / 2 - 30;
+            const innerRadius = outerRadius * 0.5;
             
             if (outerRadius <= 10) return;
             
@@ -1865,16 +1951,16 @@ export default class MyExtension {
             
             let currentAngle = -Math.PI / 2;
             
-            // ВИПРАВЛЕННЯ: Більш насичені кольори
+            // Color palette with green variations
             const colorPalette = [
-                [0.8, 0.2, 0.2],   // Яскраво-червоний
-                [0.2, 0.6, 0.2],   // Яскраво-зелений
-                [0.2, 0.4, 0.8],   // Яскраво-синій
-                [0.8, 0.6, 0.2],   // Золотистий
-                [0.6, 0.2, 0.8],   // Фіолетовий
-                [0.2, 0.8, 0.8],   // Бірюзовий
-                [0.8, 0.4, 0.6],   // Рожевий
-                [0.4, 0.4, 0.4]    // Сірий
+                [0.52, 1.0, 0.2],   // #85ff33 - primary green
+                [0.4, 0.8, 0.2],    // darker green
+                [0.6, 1.0, 0.3],    // lighter green
+                [0.3, 0.6, 0.1],    // dark green
+                [0.7, 1.0, 0.4],    // light green
+                [0.45, 0.9, 0.25],  // medium green
+                [0.35, 0.7, 0.15],  // deep green
+                [0.8, 1.0, 0.5]     // pale green
             ];
             
             for (let i = 0; i < this._assetsData.length; i++) {
@@ -1887,33 +1973,30 @@ export default class MyExtension {
                 const colorIndex = i % colorPalette.length;
                 const [r, g, b] = colorPalette[colorIndex];
                 
-                // ВИПРАВЛЕННЯ: Чіткіші сегменти
                 cr.arc(centerX, centerY, outerRadius, currentAngle, currentAngle + angle);
                 cr.arcNegative(centerX, centerY, innerRadius, currentAngle + angle, currentAngle);
                 cr.closePath();
                 
-                // ВИПРАВЛЕННЯ: Повна непрозорість
                 cr.setSourceRGBA(r, g, b, 1);
                 cr.fillPreserve();
                 
-                // ВИПРАВЛЕННЯ: Темніша обводка
-                cr.setSourceRGBA(r * 0.6, g * 0.6, b * 0.6, 1);
+                cr.setSourceRGBA(r * 0.7, g * 0.7, b * 0.7, 1);
                 cr.setLineWidth(1.5);
                 cr.stroke();
                 
                 currentAngle += angle;
             }
             
-            // ВИПРАВЛЕННЯ: Чіткіший текст
-            cr.setSourceRGBA(0, 0, 0, 1);
-            cr.setFontSize(12);
-            cr.moveTo(centerX - 20, centerY - 5);
+            // Center text
+            cr.setSourceRGBA(0.85, 0.85, 0.85, 1);
+            cr.setFontSize(14);
+            cr.moveTo(centerX - 25, centerY - 8);
             cr.showText('Загалом');
-            cr.moveTo(centerX - 25, centerY + 10);
+            cr.moveTo(centerX - 35, centerY + 12);
             cr.showText(`$${totalValue.toFixed(0)}`);
             
         } catch (e) {
-            // Ігноруємо помилки
+            // Ignore drawing errors
         }
     }
 
@@ -1923,41 +2006,28 @@ export default class MyExtension {
         const indicatorX = (width - indicatorWidth) / 2;
         const indicatorY = height - 20;
         
-        // Фон індикатора
-        cr.setSourceRGBA(0.7, 0.7, 0.7, 0.5);
+        // Background
+        cr.setSourceRGBA(0.3, 0.3, 0.3, 0.5);
         cr.rectangle(indicatorX, indicatorY, indicatorWidth, indicatorHeight);
         cr.fill();
         
-        // Поточне положення
+        // Thumb
         const visibleRatio = this._chartVisiblePoints / totalPoints;
-        const scrollRatio = startIndex / (totalPoints - this._chartVisiblePoints);
+        const scrollRatio = startIndex / Math.max(1, (totalPoints - this._chartVisiblePoints));
         const thumbWidth = Math.max(indicatorWidth * visibleRatio, 10);
         const thumbX = indicatorX + scrollRatio * (indicatorWidth - thumbWidth);
         
-        cr.setSourceRGBA(0.2, 0.6, 0.2, 0.8);
+        cr.setSourceRGBA(0.52, 1.0, 0.2, 0.8);
         cr.rectangle(thumbX, indicatorY, thumbWidth, indicatorHeight);
         cr.fill();
     }
 
-    _formatTime(date) {
-        return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-    }
-
-    _formatDate(date) {
-        return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}`;
-    }
-
-    // Оновлюємо метод _drawChart
     _drawChart(area) {
         if (this._isChartView) {
-            this._drawDonutChart(area); // Doughnut діаграма
+            this._drawDonutChart(area);
         } else {
-            this._drawAdvancedLineChart(area); // Покращений графік тренду
+            this._drawAdvancedLineChart(area);
         }
-    }
-
-    _roundCoord(num) {
-        return Math.round(num) + 0.5;
     }
 
     disable() {

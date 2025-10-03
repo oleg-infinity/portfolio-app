@@ -1,50 +1,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,200..800;1,300..800&family=Raleway:ital,wght@0,100..900;1,100..900&display=swap');
 
-/* Основні кольори теми */
-:root {
-    -dark-bg: rgba(22, 22, 22, 0.98);
-    -header-bg: #222222;
-    -card-bg: rgba(30, 30, 30, 0.9);
-    -border-color: #525252;
-    -accent-green: #85ff33;
-    -accent-green-glow: rgba(85, 180, 33, 0.712);
-    -text-primary: #f8f8f2;
-    -text-secondary: #c9c9c9;
-    -text-muted: #cccccc;
-    -positive: #85ff33;
-    -negative: #ff6b6b;
-    -hover-bg: #303030;
-}
-
-/* Portfolio Window Styles */
+/* Основні стилі */
 .portfolio-window {
     background-color: rgba(22, 22, 22, 0.98);
     border: 1px solid #525252;
     border-radius: 24px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     padding: 15px;
-    width: 450px;
-    height: 1150;
+    width: 500px;
+    height: 750px;
 }
 
 .portfolio-container {
-    width: 450px;
+    width: 500px;
 }
 
 .portfolio-header {
-    width: 448px;
+    width: 498px;
     height: 80px;
     margin: 1px 1px 0 1px;
     background-color: #222222;
     border-radius: 24px 24px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
 }
 
 .title-container {
     padding-left: 15px;
-    flex-shrink: 0;
+    padding-top: 25px;
 }
 
 .portfolio-title {
@@ -59,10 +40,7 @@
 
 .right-container {
     margin: 10px;
-    float: right;
-    display: flex;
-    align-items: center;
-    margin-left: auto; /* Це висуне контейнер праворуч */
+    margin-top: 20px;
 }
 
 .search-container {
@@ -81,18 +59,11 @@
     width: 40px;
     height: 40px;
     box-shadow: 0 0 20px rgba(52, 52, 52, 0.712);
-    display: flex;
-    justify-content: center;
-    align-items: center;
 }
 
-/* Контейнер всередині кнопки */
 .search-button-content {
     margin: 8px;
     min-width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center; /* Центрує вміст коли кнопка кругла */
 }
 
 /* Розширений стан - кнопка стає полем пошуку */
@@ -101,14 +72,8 @@
     min-width: 160px;
     padding: 8px 15px;
     background-color: rgba(30, 30, 30, 0.9);
-    justify-content: space-between; /* Розподіляє простір між елементами */
 }
 
-.search-button.expanded .search-button-content {
-    justify-content: space-between; /* Розподіляє коли розширена */
-}
-
-/* Іконка пошуку */
 .search-icon {
     color: #f8f8f2;
     width: 20px;
@@ -136,7 +101,6 @@
     width: 120px;
     opacity: 1;
     min-width: 120px;
-    flex: 1;
     margin-right: 8px;
 }
 
@@ -162,6 +126,7 @@
     min-width: 32px;
     height: 32px;
     margin: 0 15px 0 0;
+    margin-top: 5px;
 }
 
 .edit-mode-button {
@@ -192,6 +157,16 @@
     height: 16px;
 }
 
+.edit-mode-button.active {
+    background-color: #303030;
+    border: 1px solid #85ff33;
+    box-shadow: 0 0 20px rgba(85, 180, 33, 0.712);
+}
+
+.edit-mode-button.active .edit-mode-icon {
+    color: #85ff33;
+}
+
 /* Роздільна лінія */
 .horizontal-line {
     height: 1px;
@@ -212,11 +187,11 @@
 
 /* Assets Column */
 .assets-column {
-    min-width: 420px;
+    min-width: 470px;
 }
 
 .assets-header {
-    width: 550px;
+    width: 600px;
     height: 45px;
     border-bottom: 1px solid #525252;
     background-color: rgba(52, 52, 52, 0.3);
@@ -233,122 +208,92 @@
     font-weight: 200;
 }
 
-.asset-name { width: 50px; }
-.asset-price { width: 60px; }
-.asset-purchase-price { width: 60px; }
-.asset-quantity { width: 60px; }
-.asset-profitability { width: 60px; }
-
-/* Стилі для полів введення в режимі редагування */
-.edit-entry-field {
-    width: 80px;
-    background-color: rgba(30, 30, 30, 0.9);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 4px;
-    padding: 2px 6px;
-    color: #f8f8f2;
-    font-size: 12px;
+.asset-name { 
+    width: 60px; 
+    margin-left: 10px; 
 }
 
-.edit-entry-field:focus {
-    border-color: #85ff33;
-    box-shadow: 0 0 5px rgba(85, 180, 33, 0.712);
+.asset-price { 
+    width: 70px; 
 }
 
-/* Стилі для кнопки видалення */
-.delete-button {
-    background-color: transparent;
-    border: none;
-    border-radius: 4px;
-    padding: 4px;
-    margin-left: 5px;
-    min-width: 24px;
-    min-height: 24px;
+.asset-purchase-price { 
+    width: 70px; 
 }
 
-.delete-button:hover {
-    background-color: rgba(255, 0, 0, 0.2);
+.asset-quantity { 
+    width: 70px; 
 }
 
-.delete-button:active {
-    background-color: rgba(255, 0, 0, 0.3);
+.asset-profitability { 
+    width: 70px; 
 }
 
-.delete-icon {
-    color: #ff6b6b;
-    width: 16px;
-    height: 16px;
+.asset-date { 
+    width: 100px; 
 }
 
+.asset-delete { 
+    width: 40px; 
+}
+
+/* Assets Container and Rows */
 .assets-container {
     margin: 0;
 }
 
 .asset-row {
-    min-width: 550px;
-    padding: 10px;
-    border-radius: 6px;
+    min-width: 600px;
+    padding: 8px 5px;
+    border-radius: 8px;
     background-color: rgba(0, 0, 0, 0.3);
-    margin: 0;
-    height: 30px;
+    margin: 2px 0;
+    height: 35px;
 }
 
 .asset-row:hover {
     background-color: rgba(67, 78, 149, 0.6);
 }
 
-.row-symbol {
-    width: 80px;
-    margin: auto;
-    padding: auto;
-    font-size: 16px;
+.asset-cell {
+    font-size: 13px;
+    color: #f8f8f2;
+    padding: 0 5px;
+    height: 20px;
+    line-height: 20px;
+}
+
+.asset-name {
+    width: 60px;
+    margin-left: 10px;
     font-weight: bold;
-    color: #f8f8f2;
 }
 
-.row-price {
-    width: 80px;
-    margin: auto;
-    padding: auto;
-    font-size: 14px;
-    color: #f8f8f2;
+.asset-price {
+    width: 70px;
+    font-weight: 500;
 }
 
-.row-purchase-price {
-    width: 80px;
-    margin: auto;
-    padding: auto;
-    color: #f8f8f2;
+.asset-purchase-price {
+    width: 70px;
 }
 
-.row-profitability {
-    width: 80px;
-    margin: auto;
-    padding: auto;
+.asset-quantity {
+    width: 70px;
 }
 
-.row-quantity {
-    width: 80px;
-    margin: auto;
-    padding: auto;
-    font-size: 11px;
-    color: #f8f8f2;
-}
-
-.row-date {
-    width: 100px;
-}
-
-.row-empty {
-    width: 30px;
+.asset-profitability {
+    width: 70px;
+    font-weight: bold;
 }
 
 .asset-date {
     width: 100px;
+    font-size: 11px;
 }
 
-.asset-delete {
-    width: 30px;
+.asset-empty {
+    width: 40px;
 }
 
 /* Кольори для доходності */
@@ -360,51 +305,114 @@
     color: #ff6b6b;
 }
 
+/* Statistics Cards */
+.stats-cards-container {
+    margin: 10px 0;
+}
+
+.stats-card {
+    background-color: rgba(30, 30, 30, 0.8);
+    border: 1px solid #525252;
+    border-radius: 12px;
+    padding: 15px;
+    min-width: 120px;
+    min-height: 80px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.stats-card:hover {
+    border-color: #85ff33;
+    box-shadow: 0 0 15px rgba(85, 180, 33, 0.5);
+}
+
+.stats-card-title {
+    font-size: 11px;
+    color: #c9c9c9;
+    font-weight: 600;
+    margin-bottom: 8px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.stats-card-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #85ff33;
+    text-align: center;
+}
+
+.stats-card-profit {
+    font-size: 18px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.stats-card.profit-positive .stats-card-profit {
+    color: #85ff33;
+}
+
+.stats-card.profit-negative .stats-card-profit {
+    color: #ff6b6b;
+}
+
+.stats-card-investment {
+    font-size: 18px;
+    font-weight: bold;
+    color: #f8f8f2;
+    text-align: center;
+}
+
+.stats-card.profit-positive {
+    border-color: #85ff33;
+}
+
+.stats-card.profit-negative {
+    border-color: #ff6b6b;
+}
+
 /* Chart Section */
-.chart-container {
-    min-width: 220px;
-    min-height: 220px;
-    padding: 10px;
+.chart-section {
+    background-color: rgba(30, 30, 30, 0.5);
+    border-radius: 12px;
+    border: 1px solid #525252;
+    padding: 15px;
+    margin-top: 10px;
+}
+
+.chart-header {
+    margin-bottom: 15px;
+}
+
+.chart-title {
+    font-size: 16px;
+    color: #f8f8f2;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.chart-area {
+    min-width: 450px;
+    min-height: 250px;
+    background-color: transparent;
+    border-radius: 8px;
 }
 
 .chart-legend {
-    margin-top: 8px;
+    margin-top: 15px;
+    max-height: 80px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    padding: 8px;
 }
 
 .legend-item {
-    padding: 2px 0;
-}
-
-.legend-color {
-    width: 12px;
-    height: 12px;
-    border-radius: 2px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 4px 0;
 }
 
 .legend-label {
-    font-size: 9px;
-    color: #f8f8f2;
-}
-
-/* Statistics */
-.stats-container {
-    margin: 8px;
-}
-
-.total-value {
-    font-size: 14px;
-    font-weight: bold;
-    color: #f8f8f2;
-}
-
-.total-profit {
-    font-size: 14px;
-    font-weight: bold;
-}
-
-.total-investment {
-    font-size: 14px;
+    font-size: 11px;
     color: #f8f8f2;
 }
 
@@ -419,7 +427,8 @@
 
 /* Діалогові вікна */
 .confirm-dialog,
-.purchase-dialog {
+.purchase-dialog,
+.custom-date-dialog {
     background-color: rgba(40, 40, 40, 0.95);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 12px;
@@ -428,19 +437,22 @@
 }
 
 .confirm-message,
-.purchase-message {
+.purchase-message,
+.custom-date-message {
     font-size: 14px;
     color: #f8f8f2;
     margin-bottom: 15px;
 }
 
 .confirm-buttons,
-.purchase-buttons {
+.purchase-buttons,
+.date-buttons {
     margin: 10px;
 }
 
 .confirm-yes-button,
-.purchase-add-button {
+.purchase-add-button,
+.date-apply-button {
     background-color: #ff6b6b;
     border: none;
     border-radius: 6px;
@@ -449,12 +461,14 @@
 }
 
 .confirm-yes-button:hover,
-.purchase-add-button:hover {
+.purchase-add-button:hover,
+.date-apply-button:hover {
     background-color: #ff5252;
 }
 
 .confirm-cancel-button,
-.purchase-cancel-button {
+.purchase-cancel-button,
+.date-cancel-button {
     background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 6px;
@@ -463,31 +477,37 @@
 }
 
 .confirm-cancel-button:hover,
-.purchase-cancel-button:hover {
+.purchase-cancel-button:hover,
+.date-cancel-button:hover {
     background-color: rgba(255, 255, 255, 0.2);
 }
 
 /* Поля введення в діалогах */
-.purchase-field-container {
-    margin: 8px;
+.purchase-field-container,
+.date-field-container {
+    margin: 8px 0;
 }
 
-.purchase-label {
+.purchase-label,
+.date-label {
     color: #f8f8f2;
     font-size: 13px;
     min-width: 120px;
 }
 
-.purchase-entry {
+.purchase-entry,
+.date-entry {
     background-color: rgba(30, 30, 30, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
     padding: 8px 12px;
     color: #f8f8f2;
     font-size: 13px;
+    width: 150px;
 }
 
-.purchase-entry:focus {
+.purchase-entry:focus,
+.date-entry:focus {
     border-color: #85ff33;
     box-shadow: 0 0 5px rgba(85, 180, 33, 0.712);
 }
@@ -511,6 +531,7 @@
     border-radius: 6px;
     padding: 8px 12px;
     color: #f8f8f2;
+    width: 200px;
 }
 
 .suggestion-item:hover {
@@ -561,56 +582,204 @@
     width: 16px;
     height: 16px;
 }
-.chart-area {
-    min-width: 350px;
-    min-height: 200px;
-    background-color: rgba(245, 245, 245, 0.3);
-    border: 1px solid rgba(200, 200, 200, 0.5);
-    border-radius: 8px;
-    margin: 5px;
-}
 
 /* Стилі для перемикачів часу */
 .time-range-container {
-    spacing: 5px;
     margin-bottom: 10px;
 }
 
 .time-range-button {
-    padding: 4px 8px;
-    border-radius: 4px;
-    background-color: rgba(200, 200, 200, 0.3);
-    border: 1px solid rgba(150, 150, 150, 0.5);
+    padding: 6px 12px;
+    border-radius: 6px;
+    background-color: rgba(80, 80, 80, 0.5);
+    border: 1px solid #525252;
     font-size: 11px;
+    color: #c9c9c9;
 }
 
 .time-range-button:hover {
-    background-color: rgba(200, 200, 200, 0.5);
+    background-color: rgba(100, 100, 100, 0.6);
+    border-color: #85ff33;
 }
 
-.time-range-button:active {
-    background-color: rgba(100, 150, 255, 0.3);
-    border-color: rgba(80, 120, 200, 0.8);
+.time-range-button:active,
+.time-range-button.active {
+    background-color: rgba(133, 255, 51, 0.3);
+    border-color: #85ff33;
+    color: #85ff33;
+    box-shadow: 0 0 10px rgba(133, 255, 51, 0.5);
 }
 
-/* Стилі для діалогу вибору дат */
-.custom-date-dialog {
-    background-color: rgba(255, 255, 255, 0.95);
-    border: 2px solid rgba(100, 100, 100, 0.8);
-    border-radius: 8px;
-    padding: 15px;
+/* Стилі для полів введення в режимі редагування */
+.edit-entry-field {
+    background-color: rgba(30, 30, 30, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 4px 8px;
+    color: #f8f8f2;
+    font-size: 12px;
+    text-align: center;
 }
 
-.date-field-container {
-    spacing: 8px;
-    margin: 5px 0;
+.edit-entry-field:focus {
+    border-color: #85ff33;
+    box-shadow: 0 0 5px rgba(85, 180, 33, 0.712);
 }
 
-.date-label {
-    font-weight: bold;
-    min-width: 30px;
+/* Стилі для кнопки видалення */
+.delete-button {
+    background-color: transparent;
+    border: none;
+    border-radius: 4px;
+    padding: 4px;
+    min-width: 24px;
+    min-height: 24px;
 }
 
-.date-entry {
-    width: 120px;
+.delete-button:hover {
+    background-color: rgba(255, 0, 0, 0.2);
+}
+
+.delete-button:active {
+    background-color: rgba(255, 0, 0, 0.3);
+}
+
+.delete-icon {
+    color: #ff6b6b;
+    width: 16px;
+    height: 16px;
+}
+
+/* Прості контейнери з використанням margin та padding для вирівнювання */
+.portfolio-header-box {
+    width: 100%;
+    height: 80px;
+}
+
+.right-container-box {
+    margin-left: auto;
+    margin-right: 10px;
+    margin-top: 20px;
+}
+
+.search-container-box {
+    margin: 5px;
+}
+
+.edit-header-container-box {
+    margin-right: 15px;
+    margin-top: 5px;
+}
+
+.assets-header-box {
+    width: 100%;
+    height: 45px;
+}
+
+.asset-row-box {
+    width: 100%;
+    height: 35px;
+}
+
+.stats-cards-box {
+    width: 100%;
+    margin: 10px 0;
+}
+
+.chart-header-box {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.time-range-box {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.confirm-buttons-box,
+.purchase-buttons-box,
+.date-buttons-box {
+    width: 100%;
+    margin: 10px;
+}
+
+.purchase-field-box,
+.date-field-box {
+    width: 100%;
+    margin: 8px 0;
+}
+
+.suggestions-container-box {
+    width: 100%;
+    margin: 2px;
+}
+
+.chart-legend-box {
+    width: 100%;
+    margin-top: 15px;
+}
+
+/* Вирівнювання тексту */
+.text-center {
+    text-align: center;
+}
+
+.text-left {
+    text-align: left;
+}
+
+.text-right {
+    text-align: right;
+}
+
+/* Висота лінії для вертикального вирівнювання */
+.line-height-normal {
+    line-height: 20px;
+}
+
+.line-height-large {
+    line-height: 30px;
+}
+
+.line-height-small {
+    line-height: 16px;
+}
+
+/* Вертикальне вирівнювання через padding */
+.padding-top-small {
+    padding-top: 5px;
+}
+
+.padding-top-medium {
+    padding-top: 10px;
+}
+
+.padding-top-large {
+    padding-top: 15px;
+}
+
+.padding-bottom-small {
+    padding-bottom: 5px;
+}
+
+.padding-bottom-medium {
+    padding-bottom: 10px;
+}
+
+.padding-bottom-large {
+    padding-bottom: 15px;
+}
+
+/* Горизонтальне вирівнювання через margin */
+.margin-left-auto {
+    margin-left: auto;
+}
+
+.margin-right-auto {
+    margin-right: auto;
+}
+
+.margin-center {
+    margin-left: auto;
+    margin-right: auto;
 }
